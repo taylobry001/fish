@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>🎣 Emoji Fishing Gacha – Ultimate</title>
+<style>
+body{
+  margin:0;
+  background:linear-gradient(#4fc3f7,#01579b);
+  font-family:monospace;
+  color:white;
+  text-align:center;
+}
+button{
+  font-size:18px;
+  padding:10px 16px;
+  margin:4px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+}
+#water{
+  position:relative;
+  height:180px;
+  overflow:hidden;
+}
+.wave{
+  position:absolute;
+  width:200%;
+  height:100%;
+  background:rgba(255,255,255,0.08);
+  animation:wave 6s linear infinite;
+}
+@keyframes wave{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
+#scene{
+  font-size:90px;
+  height:120px;
+  line-height:120px;
+}
+.glow{
+  animation:glow 0.6s infinite alternate;
+}
+@keyframes glow{
+  from{text-shadow:0 0 10px gold;}
+  to{text-shadow:0 0 35px white;}
+}
+.panel{
+  background:rgba(0,0,0,0.35);
+  padding:10px;
+  border-radius:12px;
+  display:inline-block;
+}
+.hidden{display:none}
+.scroll{
+  max-height:260px;
+  overflow-y:auto;
+  background:rgba(0,0,0,0.4);
+  padding:10px;
+  border-radius:12px;
+}
+.shake{
+  animation:shake 0.4s;
+}
+@keyframes shake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-10px)}
+  50%{transform:translateX(10px)}
+  75%{transform:translateX(-10px)}
+  100%{transform:translateX(0)}
+}
+</style>
+</head>
+<body>
+
+<h1>🎣 Emoji Fishing Gacha</h1>
+
+<div class="panel">
+🪙 <span id="coins">0</span> |
+🍀 <span id="luck">1.0</span>x |
+🌍 <span id="zone">Ocean</span>
+</div>
+
+<div id="water">
+  <div class="wave"></div>
+</div>
+
+<div id="scene">🌊</div>
+<div id="msg"></div>
+
+<button onclick="startFish(1)">🎣 Fish</button>
+<button onclick="startFish(10)">🎰 Fish x10</button>
+<button onclick="buyLuck()">🍀 Luck (100🪙)</button>
+<button onclick="unlockZone()">🌍 Unlock Zone</button>
+<button onclick="toggleDex()">📘 FishDex</button>
+<button onclick="toggleAch()">🏆 Achievements</button>
+
+<div id="dex" class="scroll hidden"></div>
+<div id="ach" class="scroll hidden"></div>
+
+<script>
+let save=JSON.parse(localStorage.getItem("fishSave"))||{
+ coins:0,luck:1,zone:0,dex:{},zonesUnlocked:1,ach:{}
+};
+let coins=save.coins,luck=save.luck,zoneIndex=save.zone,dex=save.dex;
+
+const zones=[
+ {name:"Ocean",fish:[
+  {e:"🐟",n:"Fish",r:"Common",c:40,v:1},
+  {e:"🐠",n:"Tropical",r:"Uncommon",c:25,v:3},
+  {e:"🦑",n:"Squid",r:"Rare",c:10,v:10},
+  {e:"🐡",n:"Puffer",r:"Epic",c:3,v:30},
+  {e:"🐉",n:"Dragon Fish",r:"Legendary",c:0.9,v:100},
+  {e:"👑🐉",n:"MYTHIC EMPEROR DRAGON",r:"SECRET",c:0.1,v:1000}
+ ]},
+ {name:"Abyss",fish:[
+  {e:"🐙",n:"Octopus",r:"Rare",c:25,v:15},
+  {e:"🦈",n:"Shark",r:"Epic",c:10,v:40},
+  {e:"🐋",n:"Whale",r:"Legendary",c:1,v:150},
+  {e:"👑🐉",n:"MYTHIC EMPEROR DRAGON",r:"SECRET",c:0.1,v:1500}
+ ]}
+];
+
+const mutations=[
+ {n:"Shiny ✨",c:5,m:2},
+ {n:"Ancient 🦴",c:1,m:5},
+ {n:"Giant 🐋",c:0.5,m:10}
+];
+
+function startFish(t){
+ let d=0;
+ for(let i=0;i<t;i++){
+  setTimeout(fish,d);
+  d+=1100;
+ }
+}
+
+function fish(){
+ document.getElementById("scene").innerText="🎣";
+ document.getElementById("msg").innerText="Fishing...";
+ setTimeout(()=>document.getElementById("scene").innerText="💦",400);
+ setTimeout(reveal,900);
+}
+
+function reveal(){
+ let roll=Math.random()*100/luck,sum=0,fish;
+ for(let f of zones[zoneIndex].fish){
+  sum+=f.c;
+  if(roll<=sum){fish=f;break;}
+ }
+ let mut=null,mult=1;
+ for(let m of mutations){
+  if(Math.random()*100<m.c){mut=m;mult=m.m;break;}
+ }
+ let val=fish.v*mult;
+ coins+=val;
+
+ let key=fish.n+(mut?" "+mut.n:"");
+ dex[key]=dex[key]||{
+  e:fish.e,n:fish.n,r:fish.r,m:mut?mut.n:"None",
+  v:val,d:new Date().toLocaleString(),c:0
+ };
+ dex[key].c++;
+
+ const scene=document.getElementById("scene");
+ scene.innerText=fish.e;
+ scene.className=fish.c<=1?"glow":"";
+ if(fish.r==="SECRET") scene.classList.add("shake");
+
+ document.getElementById("msg").innerHTML=
+ `<b>${fish.n}</b><br>${fish.r}<br>${mut?mut.n:""} +${val}🪙`;
+
+ saveGame();
+ update();
+}
+
+function update(){
+ document.getElementById("coins").innerText=coins;
+ document.getElementById("luck").innerText=luck.toFixed(1);
+ document.getElementById("zone").innerText=zones[zoneIndex].name;
+}
+
+function buyLuck(){
+ if(coins>=100){
+  coins-=100;
+  luck+=0.25;
+  saveGame();
+  update();
+ }
+}
+
+function unlockZone(){
+ if(zoneIndex+1<zones.length && coins>=500){
+  coins-=500;
+  zoneIndex++;
+  saveGame();
+  update();
+ }
+}
+
+function toggleDex(){
+ let d=document.getElementById("dex");
+ d.classList.toggle("hidden");
+ let html="<h3>📘 FishDex</h3>";
+ for(let k in dex){
+  let f=dex[k];
+  html+=`${f.e} <b>${f.n}</b><br>
+  Rarity: ${f.r}<br>
+  Mutation: ${f.m}<br>
+  Value: ${f.v}<br>
+  First: ${f.d}<br>
+  Count: ${f.c}<hr>`;
+ }
+ d.innerHTML=html;
+}
+
+function toggleAch(){
+ let a=document.getElementById("ach");
+ a.classList.toggle("hidden");
+ a.innerHTML="<h3>🏆 Achievements</h3>Catch a SECRET fish 👑<br>Reach 1000🪙";
+}
+
+function saveGame(){
+ localStorage.setItem("fishSave",JSON.stringify({
+  coins,luck,zone:zoneIndex,dex,zonesUnlocked:zoneIndex+1
+ }));
+}
+
+update();
+</script>
+
+</body>
+</html>
