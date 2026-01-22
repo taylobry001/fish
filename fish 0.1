@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎣 Ultimate Fishing Gacha Pro</title>
+    <style>
+        /* ================= VARIABLES & BASE ================= */
+        :root {
+            --primary: #4fc3f7;
+            --secondary: #01579b;
+            --dark: #0a1929;
+            --light: #f0f8ff;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --epic: #9c27b0;
+            --legendary: #ff9800;
+            --boss: #ff1744;
+            --secret: #00ffcc;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+            transition: background 1s ease;
+        }
+        
+        /* ================= MAIN LAYOUT ================= */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 250px 1fr 250px;
+            gap: 15px;
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .left-sidebar, .right-sidebar {
+                display: none;
+            }
+        }
+        
+        /* ================= HEADER ================= */
+        .header {
+            grid-column: 1 / -1;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            padding: 15px 30px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(to right, #ffeb3b, #4fc3f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .coin-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* ================= FISHING AREA (MAIN FOCUS) ================= */
+        .fishing-area {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* ================= FISH BUTTON (MAIN FEATURE) ================= */
+        .fish-button-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 30px 0;
+        }
+        
+        .fish-button {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4fc3f7, #01579b);
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 80px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
+                        0 0 50px rgba(79, 195, 247, 0.3),
+                        inset 0 0 30px rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .fish-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6),
+                        0 0 70px rgba(79, 195, 247, 0.5),
+                        inset 0 0 40px rgba(255, 255, 255, 0.2);
+        }
+        
+        .fish-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4),
+                        0 0 30px rgba(79, 195, 247, 0.2),
+                        inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        
+        .fish-button-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulseGlow 2s infinite alternate;
+        }
+        
+        @keyframes pulseGlow {
+            0% { opacity: 0.3; transform: scale(0.95); }
+            100% { opacity: 0.6; transform: scale(1.05); }
+        }
+        
+        .water-ripples {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            animation: rippleEffect 1.5s linear infinite;
+        }
+        
+        @keyframes rippleEffect {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        
+        /* ================= FISH CATCH DISPLAY ================= */
+        .fish-catch-display {
+            width: 100%;
+            min-height: 250px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .catch-animation-container {
+            text-align: center;
+            animation: fishReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        @keyframes fishReveal {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            70% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+        
+        .caught-fish-emoji {
+            font-size: 100px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+        }
+        
+        .caught-fish-name {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .fish-details {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .fish-stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 25px;
+            border-radius: 15px;
+            min-width: 150px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        /* ================= RARITY GLOW EFFECTS ================= */
+        .rarity-glow-common { 
+            box-shadow: 0 0 30px #b0bec5, 0 0 60px #b0bec5, inset 0 0 20px #b0bec5;
+            animation: glowPulse 2s infinite alternate;
+        }
+        
+        .rarity-glow-uncommon { 
+            box-shadow: 0 0 30px #4caf50, 0 0 60px #4caf50, inset 0 0 20px #4caf50;
+            animation: glowPulse 1.8s infinite alternate;
+        }
+        
+        .rarity-glow-rare { 
+            box-shadow: 0 0 30px #2196f3, 0 0 60px #2196f3, 0 0 90px #2196f3, inset 0 0 20px #2196f3;
+            animation: glowPulse 1.6s infinite alternate;
+        }
+        
+        .rarity-glow-epic { 
+            box-shadow: 0 0 30px #9c27b0, 0 0 60px #9c27b0, 0 0 90px #9c27b0, inset 0 0 20px #9c27b0;
+            animation: glowPulse 1.4s infinite alternate;
+        }
+        
+        .rarity-glow-legendary { 
+            box-shadow: 0 0 30px #ff9800, 0 0 60px #ff9800, 0 0 90px #ff9800, 0 0 120px #ff9800, inset 0 0 20px #ff9800;
+            animation: glowPulse 1.2s infinite alternate;
+        }
+        
+        .rarity-glow-secret { 
+            box-shadow: 0 0 30px #00ffcc, 0 0 60px #00ffcc, 0 0 90px #00ffcc, 0 0 120px #00ffcc, inset 0 0 20px #00ffcc;
+            animation: secretGlow 1s infinite alternate;
+        }
+        
+        @keyframes glowPulse {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(1.3); }
+        }
+        
+        @keyframes secretGlow {
+            0% { box-shadow: 0 0 20px #00ffcc, 0 0 40px #00ffcc, 0 0 60px #00ffcc, inset 0 0 15px #00ffcc; }
+            100% { box-shadow: 0 0 40px #00ffcc, 0 0 80px #00ffcc, 0 0 100px #00ffcc, inset 0 0 25px #00ffcc; }
+        }
+        
+        /* ================= BOSS BAR ================= */
+        #bossBar {
+            width: 100%;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 25px;
+            margin: 30px 0;
+            overflow: hidden;
+            display: none;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+        
+        #bossHealth {
+            height: 100%;
+            background: linear-gradient(90deg, #f44336, #ff9800, #4caf50);
+            width: 100%;
+            transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            font-size: 1.2rem;
+        }
+        
+        /* ================= ACTION BUTTONS ================= */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-fish {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #4fc3f7, #01579b);
+            font-size: 1.3rem;
+            height: 70px;
+            border: none;
+        }
+        
+        /* ================= SIDEBARS ================= */
+        .left-sidebar, .right-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .panel {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .panel h3 {
+            margin-bottom: 15px;
+            color: var(--primary);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 8px;
+        }
+        
+        /* ================= STATS PANEL ================= */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        /* ================= BAIT SHOP ================= */
+        .bait-grid {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .bait-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .bait-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+            border-color: var(--primary);
+        }
+        
+        .bait-icon {
+            font-size: 2rem;
+            width: 50px;
+            text-align: center;
+        }
+        
+        .bait-info {
+            flex-grow: 1;
+        }
+        
+        .bait-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .bait-desc {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .bait-price {
+            font-weight: bold;
+            color: #ffeb3b;
+            font-size: 1.1rem;
+        }
+        
+        /* ================= FISHDEX ================= */
+        .fishdex-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .fishdex-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+        
+        .fishdex-card:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--primary);
+        }
+        
+        .fishdex-card.caught {
+            border-color: var(--success);
+            background: rgba(76, 175, 80, 0.2);
+        }
+        
+        .fishdex-card.secret {
+            background: linear-gradient(45deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.3));
+            border: 2px solid var(--secret);
+        }
+        
+        .fishdex-emoji {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+        
+        /* Zone-themed backgrounds */
+        .zone-0 { background: linear-gradient(135deg, rgba(79, 195, 247, 0.2), rgba(1, 87, 155, 0.3)) !important; }
+        .zone-1 { background: linear-gradient(135deg, rgba(0, 255, 204, 0.2), rgba(0, 119, 68, 0.3)) !important; }
+        .zone-2 { background: linear-gradient(135deg, rgba(0, 31, 63, 0.3), rgba(0, 0, 0, 0.4)) !important; }
+        .zone-3 { background: linear-gradient(135deg, rgba(255, 51, 0, 0.2), rgba(102, 0, 0, 0.3)) !important; }
+        .zone-4 { background: linear-gradient(135deg, rgba(170, 255, 255, 0.2), rgba(0, 68, 102, 0.3)) !important; }
+        
+        /* ================= ACHIEVEMENTS ================= */
+        .achievement-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 4px solid transparent;
+        }
+        
+        .achievement-item.unlocked {
+            border-left-color: var(--success);
+            background: rgba(76, 175, 80, 0.2);
+        }
+        
+        .achievement-item.secret {
+            border-left-color: var(--secret);
+            background: rgba(0, 255, 204, 0.1);
+        }
+        
+        .achievement-icon {
+            font-size: 1.5rem;
+            width: 40px;
+            text-align: center;
+        }
+        
+        /* ================= ANIMATIONS ================= */
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
+            font-size: 24px;
+            animation: floatUp 1.5s forwards;
+        }
+        
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
+        
+        /* ================= MODAL ================= */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: rgba(0, 0, 0, 0.95);
+            border-radius: 25px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            border: 3px solid var(--secret);
+            text-align: center;
+            animation: modalAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        @keyframes modalAppear {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+        
+        /* ================= UTILITY ================= */
+        .hidden {
+            display: none !important;
+        }
+        
+        .highlight {
+            color: #ffeb3b;
+            font-weight: bold;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--primary);
+            background: rgba(79, 195, 247, 0.1);
+        }
+        
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* ================= MOBILE ================= */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            background: var(--primary);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .mobile-toggle {
+                display: flex;
+            }
+            
+            .left-sidebar, .right-sidebar {
+                display: none;
+                position: fixed;
+                top: 0;
+                width: 300px;
+                height: 100vh;
+                z-index: 99;
+                overflow-y: auto;
+                padding: 20px;
+                background: rgba(0, 0, 0, 0.95);
+                backdrop-filter: blur(20px);
+            }
+            
+            .left-sidebar.active, .right-sidebar.active {
+                display: block;
+            }
+            
+            .left-sidebar { left: 0; }
+            .right-sidebar { right: 0; }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .fish-button {
+                width: 150px;
+                height: 150px;
+                font-size: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎣 Ultimate Fishing Gacha</h1>
+            <div class="coin-display">
+                <span>🪙</span>
+                <span id="coins">5,957</span>
+            </div>
+        </div>
+        
+        <!-- Left Sidebar (Stats & FishDex) -->
+        <div class="left-sidebar">
+            <div class="panel">
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('stats', this)">📊 Stats</div>
+                    <div class="tab" onclick="switchTab('fishdex', this)">📘 FishDex</div>
+                </div>
+                
+                <div id="statsTab">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">🔥 Pity</div>
+                            <div id="pity" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">🌍 Zone</div>
+                            <div id="zone" class="stat-value">Tide Pool</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">🎣 Rod</div>
+                            <div id="rod" class="stat-value">Stick Rod</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">📊 Total Fish</div>
+                            <div id="totalFish" class="stat-value">11</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">🏆 Achievements</div>
+                            <div id="achievementCount" class="stat-value">3/10</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">🐲 Secret Fish</div>
+                            <div id="secretFish" class="stat-value">0/5</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="fishdexTab" class="hidden">
+                    <div class="fishdex-grid" id="fishdexGrid">
+                        <!-- Fish will be generated here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>🎣 Active Baits</h3>
+                <div id="activeBaits">
+                    <div class="bait-item">
+                        <div class="bait-icon">🍞</div>
+                        <div class="bait-info">
+                            <div class="bait-name">Basic Bait</div>
+                            <div class="bait-desc">Common fish +20%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Fishing Area -->
+        <div class="fishing-area">
+            <!-- Fish Button -->
+            <div class="fish-button-container">
+                <div class="fish-button" onclick="catchFish()" id="fishButton">
+                    <div class="fish-button-glow"></div>
+                    🎣
+                </div>
+                <div class="water-ripples" id="waterRipples"></div>
+            </div>
+            
+            <!-- Boss Health Bar -->
+            <div id="bossBar">
+                <div id="bossHealth">100%</div>
+            </div>
+            
+            <!-- Caught Fish Display -->
+            <div class="fish-catch-display">
+                <div id="catchDisplay" class="catch-animation-container">
+                    <div class="caught-fish-emoji">🎣</div>
+                    <div class="caught-fish-name">Ready to Fish!</div>
+                    <div class="fish-details">
+                        <div class="fish-stat">
+                            <div class="stat-label">Click the fishing button</div>
+                            <div class="stat-value">🎣</div>
+                        </div>
+                        <div class="fish-stat">
+                            <div class="stat-label">Use baits to increase</div>
+                            <div class="stat-value">📈 Chances</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-fish" onclick="catchFish()">
+                    🎣 CLICK TO FISH
+                </button>
+                <button class="btn btn-danger" onclick="attackBoss()" id="attackBtn" style="display: none;">
+                    ⚔️ ATTACK BOSS
+                </button>
+                <button class="btn btn-primary" onclick="useBait('rare')">
+                    🎣 USE RARE BAIT
+                </button>
+                <button class="btn btn-success" onclick="nextZone()">
+                    🌍 NEXT ZONE
+                </button>
+            </div>
+        </div>
+        
+        <!-- Right Sidebar (Shop & Achievements) -->
+        <div class="right-sidebar">
+            <div class="panel">
+                <h3>🛒 Bait Shop</h3>
+                <div class="bait-grid" id="baitShop">
+                    <!-- Bait items will be generated here -->
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>🏆 Achievements</h3>
+                <div id="achievementList">
+                    <!-- Achievements will be generated here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Toggle Buttons -->
+        <div class="mobile-toggle" onclick="toggleSidebar('left')">📊</div>
+        <div class="mobile-toggle" style="right: 90px;" onclick="toggleSidebar('right')">🛒</div>
+        
+        <!-- Modals -->
+        <div id="secretModal" class="modal">
+            <div class="modal-content">
+                <div style="font-size: 80px; margin-bottom: 20px; animation: secretGlow 2s infinite alternate;">🐲</div>
+                <h2 style="color: var(--secret); margin-bottom: 15px; font-size: 2rem;">SECRET BOSS UNLOCKED!</h2>
+                <p id="secretBossText" style="margin-bottom: 30px; font-size: 1.2rem;"></p>
+                <button class="btn btn-danger" onclick="hideModal('secretModal')" 
+                        style="padding: 15px 30px; font-size: 1.2rem;">
+                    ⚔️ FIGHT THE BOSS!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================= GAME DATA =================
+        const gameData = {
+            coins: 5957,
+            pity: 0,
+            zone: 0,
+            rod: 0,
+            totalCatches: 11,
+            achievements: {
+                first_catch: true,
+                coin_collector: true,
+                pity_breaker: false,
+                boss_slayer: false,
+                secret_finder: false
+            },
+            fishDex: {},
+            activeBaits: [],
+            secretFishFound: 0,
+            bossesDefeated: 0,
+            
+            // Fish rarities and chances
+            rarities: [
+                { type: "common", weight: 50, emoji: "🐟", color: "#b0bec5", baseValue: 10 },
+                { type: "uncommon", weight: 25, emoji: "🐠", color: "#4caf50", baseValue: 25 },
+                { type: "rare", weight: 15, emoji: "🐡", color: "#2196f3", baseValue: 100 },
+                { type: "epic", weight: 7, emoji: "🦈", color: "#9c27b0", baseValue: 500 },
+                { type: "legendary", weight: 3, emoji: "🐋", color: "#ff9800", baseValue: 2500 },
+                { type: "secret", weight: 0.1, emoji: "🐲", color: "#00ffcc", baseValue: 10000 }
+            ],
+            
+            // Baits available in shop
+            baits: [
+                { id: "common", name: "Basic Bait", emoji: "🍞", price: 50, 
+                  effect: { common: 1.5 }, duration: 10, desc: "+50% Common fish chance" },
+                { id: "rare", name: "Rare Bait", emoji: "🦐", price: 200, 
+                  effect: { rare: 2.0, epic: 1.5 }, duration: 15, desc: "Double Rare, +50% Epic" },
+                { id: "epic", name: "Epic Bait", emoji: "🍤", price: 500, 
+                  effect: { epic: 2.5, legendary: 1.8 }, duration: 10, desc: "Better Epic/Legendary" },
+                { id: "legendary", name: "Legendary Lure", emoji: "🌟", price: 1500, 
+                  effect: { legendary: 3.0, secret: 2.0 }, duration: 5, desc: "Legendary magnet" },
+                { id: "secret", name: "Mystery Bait", emoji: "❓", price: 5000, 
+                  effect: { secret: 5.0, legendary: 2.0 }, duration: 3, desc: "Secret fish chance++" },
+                { id: "boss", name: "Boss Bait", emoji: "👑", price: 3000, 
+                  effect: { boss: 3.0 }, duration: 20, desc: "Attract zone bosses" }
+            ],
+            
+            // Zones with themed fish
+            zones: [
+                { name: "Tide Pool", color1: "#4fc3f7", color2: "#01579b", fishCount: 25 },
+                { name: "Coral Reef", color1: "#00ffcc", color2: "#007744", fishCount: 30 },
+                { name: "Deep Sea", color1: "#001f3f", color2: "#000000", fishCount: 35 },
+                { name: "Volcanic Vent", color1: "#ff3300", color2: "#660000", fishCount: 25 },
+                { name: "Iceberg Lagoon", color1: "#aaffff", color2: "#004466", fishCount: 20 }
+            ],
+            
+            // Fish by rarity with zone themes
+            fishList: {
+                common: [
+                    { name: "Common Carp", emoji: "🐟", zones: [0,1,2], flavor: "A basic fish found everywhere" },
+                    { name: "Bluegill", emoji: "🐠", zones: [0,1], flavor: "Small but abundant" },
+                    { name: "Catfish", emoji: "🐡", zones: [0,1,2], flavor: "Bottom feeder with whiskers" },
+                    { name: "Bass", emoji: "🐟", zones: [0,1], flavor: "Popular game fish" },
+                    { name: "Trout", emoji: "🐟", zones: [0,4], flavor: "Freshwater favorite" }
+                ],
+                uncommon: [
+                    { name: "Rainbow Trout", emoji: "🌈", zones: [0,1], flavor: "Colorful and lively" },
+                    { name: "Pufferfish", emoji: "🐡", zones: [0,1], flavor: "Inflates when threatened" },
+                    { name: "Clownfish", emoji: "🤡", zones: [1], flavor: "Lives in anemones" },
+                    { name: "Seahorse", emoji: "🐴", zones: [1,2], flavor: "Male carries the eggs" },
+                    { name: "Angelfish", emoji: "😇", zones: [1], flavor: "Graceful and beautiful" }
+                ],
+                rare: [
+                    { name: "Lionfish", emoji: "🦁", zones: [1], flavor: "Venomous and beautiful" },
+                    { name: "Electric Eel", emoji: "⚡", zones: [2], flavor: "Generates electric shocks" },
+                    { name: "Manta Ray", emoji: "😇", zones: [1,2], flavor: "Gentle giant of the sea" },
+                    { name: "Barracuda", emoji: "🔪", zones: [1,2], flavor: "Fast and predatory" },
+                    { name: "Archerfish", emoji: "🎯", zones: [0,1], flavor: "Shoots water at insects" }
+                ],
+                epic: [
+                    { name: "Great White Shark", emoji: "🦈", zones: [2], flavor: "Apex predator of the seas" },
+                    { name: "Giant Squid", emoji: "🦑", zones: [2], flavor: "Deep sea mystery" },
+                    { name: "Whale Shark", emoji: "🐋", zones: [1,2], flavor: "Largest fish in the ocean" },
+                    { name: "Sunfish", emoji: "🌞", zones: [0,1], flavor: "Weird and wonderful" },
+                    { name: "Dragonfish", emoji: "🐉", zones: [2], flavor: "Bioluminescent deep sea dweller" }
+                ],
+                legendary: [
+                    { name: "Kraken", emoji: "🐙", zones: [2], flavor: "Mythical sea monster" },
+                    { name: "Leviathan", emoji: "🐋", zones: [2,3], flavor: "Ancient sea beast" },
+                    { name: "Phoenix Fish", emoji: "🔥", zones: [3], flavor: "Reborn from volcanic ash" },
+                    { name: "Ice Phoenix", emoji: "❄️", zones: [4], flavor: "Frozen legend of the north" },
+                    { name: "Celestial Carp", emoji: "⭐", zones: [0,1,2,3,4], flavor: "Fish that swims among stars" }
+                ],
+                secret: [
+                    { name: "Time Koi", emoji: "⏳", zones: [0], boss: "Chrono Dragon", 
+                      flavor: "Controls the flow of time itself" },
+                    { name: "Dream Angler", emoji: "💤", zones: [1], boss: "Nightmare Leviathan",
+                      flavor: "Lures prey with beautiful dreams" },
+                    { name: "Void Squid", emoji: "🌌", zones: [2], boss: "Void Emperor",
+                      flavor: "Exists between dimensions" },
+                    { name: "Magma Core", emoji: "🔥", zones: [3], boss: "Magma Titan",
+                      flavor: "Heart of the volcano given form" },
+                    { name: "Frost Heart", emoji: "❄️", zones: [4], boss: "Ice Behemoth",
+                      flavor: "Frozen soul of the arctic" }
+                ]
+            },
+            
+            // Achievements
+            achievementsList: [
+                { id: "first_catch", name: "First Catch", desc: "Catch your first fish", icon: "🎣", secret: false },
+                { id: "coin_collector", name: "Coin Collector", desc: "Collect 1000 coins", icon: "🪙", secret: false },
+                { id: "pity_breaker", name: "Pity Breaker", desc: "Reach 100 pity", icon: "🔥", secret: false },
+                { id: "boss_slayer", name: "Boss Slayer", desc: "Defeat a boss", icon: "⚔️", secret: false },
+                { id: "secret_finder", name: "Secret Finder", desc: "Find a secret fish", icon: "🐲", secret: true },
+                { id: "bait_master", name: "Bait Master", desc: "Use 10 baits", icon: "🪱", secret: false },
+                { id: "zone_explorer", name: "Zone Explorer", desc: "Visit all zones", icon: "🌍", secret: false },
+                { id: "rich_angler", name: "Rich Angler", desc: "Get 10,000 coins", icon: "💰", secret: false },
+                { id: "legend_hunter", name: "Legend Hunter", desc: "Catch 5 legendary fish", icon: "🌟", secret: false },
+                { id: "dex_complete", name: "Dex Complete", desc: "Complete FishDex", icon: "📘", secret: true }
+            ],
+            
+            // Current game state
+            currentBoss: null,
+            bossHP: 0,
+            bossMaxHP: 0,
+            lastCatch: null
+        };
+
+        // ================= INITIALIZATION =================
+        function init() {
+            loadGame();
+            updateUI();
+            renderBaitShop();
+            renderAchievements();
+            renderFishDex();
+            updateBackground();
+            createRipples();
+            
+            // Set up fish button animation
+            setupFishButton();
+        }
+
+        // ================= FISH BUTTON ANIMATIONS =================
+        function setupFishButton() {
+            const fishButton = document.getElementById('fishButton');
+            const ripplesContainer = document.getElementById('waterRipples');
+            
+            // Create continuous ripples
+            setInterval(() => {
+                if (!gameData.isSpinning) {
+                    createRipple(ripplesContainer);
+                }
+            }, 1500);
+        }
+
+        function createRipples() {
+            const container = document.getElementById('waterRipples');
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => createRipple(container), i * 500);
+            }
+        }
+
+        function createRipple(container) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = '50%';
+            ripple.style.top = '50%';
+            ripple.style.width = '200px';
+            ripple.style.height = '200px';
+            ripple.style.marginLeft = '-100px';
+            ripple.style.marginTop = '-100px';
+            container.appendChild(ripple);
+            
+            setTimeout(() => {
+                if (ripple.parentNode) ripple.parentNode.removeChild(ripple);
+            }, 1500);
+        }
+
+        // ================= FISH CATCHING =================
+        function catchFish() {
+            const fishButton = document.getElementById('fishButton');
+            const catchDisplay = document.getElementById('catchDisplay');
+            
+            // Button click animation
+            fishButton.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                fishButton.style.transform = 'scale(1)';
+            }, 100);
+            
+            // Create splash particles
+            createSplashParticles();
+            
+            // Calculate catch result
+            const result = calculateCatchResult();
+            const fish = getRandomFish(result.type);
+            
+            // Calculate value
+            const value = Math.floor(result.baseValue * (gameData.zone + 1));
+            gameData.coins += value;
+            gameData.totalCatches++;
+            gameData.pity = result.type === 'common' ? gameData.pity + 1 : 0;
+            
+            // Record in FishDex
+            const fishId = `${result.type}_${fish.name}`;
+            if (!gameData.fishDex[fishId]) {
+                gameData.fishDex[fishId] = {
+                    name: fish.name,
+                    emoji: fish.emoji,
+                    rarity: result.type,
+                    count: 1,
+                    zones: fish.zones,
+                    value: value,
+                    flavor: fish.flavor
+                };
+                
+                // Check for secret fish
+                if (result.type === 'secret') {
+                    gameData.secretFishFound++;
+                    unlockSecretBoss(fish);
+                }
+            } else {
+                gameData.fishDex[fishId].count++;
+            }
+            
+            // Update display with animation
+            catchDisplay.innerHTML = `
+                <div class="caught-fish-emoji">${fish.emoji}</div>
+                <div class="caught-fish-name">${fish.name}</div>
+                <div class="rarity-badge" style="background: ${result.color}; margin: 15px auto; padding: 10px 20px; border-radius: 20px; font-weight: bold;">
+                    ${result.type.toUpperCase()}
+                </div>
+                <div class="fish-details">
+                    <div class="fish-stat">
+                        <div class="stat-label">Value</div>
+                        <div class="stat-value highlight">+${value} 🪙</div>
+                    </div>
+                    <div class="fish-stat">
+                        <div class="stat-label">Rarity Chance</div>
+                        <div class="stat-value">${calculateChance(result.type)}%</div>
+                    </div>
+                    <div class="fish-stat">
+                        <div class="stat-label">Pity Counter</div>
+                        <div class="stat-value">${gameData.pity}</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; font-style: italic; opacity: 0.8;">
+                    "${fish.flavor}"
+                </div>
+            `;
+            
+            // Apply rarity glow to the catch display
+            catchDisplay.className = `catch-animation-container rarity-glow-${result.type}`;
+            
+            // Update game state
+            gameData.lastCatch = { fish, result, value };
+            
+            // Animate particles based on rarity
+            createRarityParticles(fish.emoji, result.type);
+            
+            // Check achievements
+            checkAchievements();
+            updateUI();
+            renderFishDex();
+            saveGame();
+            
+            // Check for boss spawn (5% chance + pity bonus)
+            if (Math.random() < 0.05 + (gameData.pity * 0.001)) {
+                spawnBoss();
+            }
+            
+            // Reset animation class after animation completes
+            setTimeout(() => {
+                catchDisplay.className = 'catch-animation-container';
+            }, 1000);
+        }
+
+        function calculateCatchResult() {
+            // Start with base weights
+            let weights = [...gameData.rarities];
+            
+            // Apply bait modifiers
+            gameData.activeBaits.forEach(bait => {
+                Object.keys(bait.effect).forEach(rarity => {
+                    const weightIndex = weights.findIndex(w => w.type === rarity);
+                    if (weightIndex !== -1) {
+                        weights[weightIndex].weight *= bait.effect[rarity];
+                    }
+                });
+            });
+            
+            // Calculate total weight
+            const totalWeight = weights.reduce((sum, w) => sum + w.weight, 0);
+            let random = Math.random() * totalWeight;
+            
+            // Select rarity based on weight
+            for (const weight of weights) {
+                if (random < weight.weight) {
+                    return weight;
+                }
+                random -= weight.weight;
+            }
+            
+            return weights[0];
+        }
+
+        function getRandomFish(rarity) {
+            const fishPool = gameData.fishList[rarity];
+            const availableFish = fishPool.filter(fish => fish.zones.includes(gameData.zone));
+            return availableFish.length > 0 ? 
+                availableFish[Math.floor(Math.random() * availableFish.length)] : 
+                fishPool[Math.floor(Math.random() * fishPool.length)];
+        }
+
+        function calculateChance(rarityType) {
+            const rarity = gameData.rarities.find(r => r.type === rarityType);
+            let totalWeight = gameData.rarities.reduce((sum, r) => sum + r.weight, 0);
+            
+            // Apply bait modifiers
+            gameData.activeBaits.forEach(bait => {
+                Object.keys(bait.effect).forEach(rarity => {
+                    const rarityIndex = gameData.rarities.findIndex(r => r.type === rarity);
+                    if (rarityIndex !== -1) {
+                        totalWeight += (gameData.rarities[rarityIndex].weight * (bait.effect[rarity] - 1));
+                    }
+                });
+            });
+            
+            const finalWeight = rarity.weight * 
+                (gameData.activeBaits.reduce((mult, bait) => mult * (bait.effect[rarityType] || 1), 1));
+            
+            return ((finalWeight / totalWeight) * 100).toFixed(2);
+        }
+
+        // ================= PARTICLE EFFECTS =================
+        function createSplashParticles() {
+            const fishButton = document.getElementById('fishButton');
+            const rect = fishButton.getBoundingClientRect();
+            
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.textContent = '💧';
+                    particle.style.left = `${rect.left + rect.width/2 + (Math.random() - 0.5) * 100}px`;
+                    particle.style.top = `${rect.top + rect.height/2 + (Math.random() - 0.5) * 100}px`;
+                    particle.style.fontSize = `${15 + Math.random() * 15}px`;
+                    document.body.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (particle.parentNode) particle.parentNode.removeChild(particle);
+                    }, 1500);
+                }, i * 50);
+            }
+        }
+
+        function createRarityParticles(emoji, rarity) {
+            const catchDisplay = document.querySelector('.fish-catch-display');
+            const rect = catchDisplay.getBoundingClientRect();
+            const particleCount = {
+                common: 10,
+                uncommon: 15,
+                rare: 20,
+                epic: 25,
+                legendary: 30,
+                secret: 40
+            }[rarity] || 10;
+            
+            for (let i = 0; i < particleCount; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.textContent = emoji;
+                    particle.style.left = `${rect.left + rect.width/2 + (Math.random() - 0.5) * 300}px`;
+                    particle.style.top = `${rect.top + rect.height/2 + (Math.random() - 0.5) * 200}px`;
+                    particle.style.fontSize = `${20 + Math.random() * 20}px`;
+                    particle.style.color = gameData.rarities.find(r => r.type === rarity).color;
+                    document.body.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (particle.parentNode) particle.parentNode.removeChild(particle);
+                    }, 1500);
+                }, i * 30);
+            }
+        }
+
+        // ================= SECRET FISH & BOSSES =================
+        function unlockSecretBoss(fish) {
+            const modal = document.getElementById('secretModal');
+            const bossText = document.getElementById('secretBossText');
+            
+            bossText.innerHTML = `
+                You found the legendary <span class="highlight">${fish.name}</span> ${fish.emoji}!<br><br>
+                <span style="color: var(--secret); font-size: 1.3rem;">"${fish.flavor}"</span><br><br>
+                This has awakened the <span style="color: var(--secret); font-weight: bold;">${fish.boss}</span>!<br>
+                Prepare for an epic battle!
+            `;
+            
+            modal.style.display = 'flex';
+            
+            // Unlock secret achievement
+            gameData.achievements.secret_finder = true;
+            renderAchievements();
+        }
+
+        function spawnBoss() {
+            const bosses = [
+                { name: "Tidal Titan", emoji: "👑🐋", hp: 500, reward: 1000 },
+                { name: "Coral Colossus", emoji: "👑🐙", hp: 750, reward: 2000 },
+                { name: "Abyssal Emperor", emoji: "👑🦑", hp: 1000, reward: 3000 }
+            ];
+            
+            gameData.currentBoss = bosses[Math.floor(Math.random() * bosses.length)];
+            gameData.bossMaxHP = gameData.currentBoss.hp;
+            gameData.bossHP = gameData.bossMaxHP;
+            
+            // Show boss bar and attack button
+            document.getElementById('bossBar').style.display = 'block';
+            document.getElementById('attackBtn').style.display = 'block';
+            
+            // Show boss notification in catch display
+            const catchDisplay = document.getElementById('catchDisplay');
+            catchDisplay.innerHTML = `
+                <div class="caught-fish-emoji">⚠️</div>
+                <div class="caught-fish-name" style="color: var(--boss);">BOSS APPEARED!</div>
+                <div class="rarity-badge" style="background: var(--boss); margin: 15px auto; padding: 10px 20px; border-radius: 20px; font-weight: bold;">
+                    ${gameData.currentBoss.name} ${gameData.currentBoss.emoji}
+                </div>
+                <div class="fish-details">
+                    <div class="fish-stat">
+                        <div class="stat-label">Health</div>
+                        <div class="stat-value">${gameData.bossHP} HP</div>
+                    </div>
+                    <div class="fish-stat">
+                        <div class="stat-label">Reward</div>
+                        <div class="stat-value highlight">${gameData.currentBoss.reward} 🪙</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    Click ATTACK BOSS to fight!
+                </div>
+            `;
+            
+            updateBossBar();
+        }
+
+        function attackBoss() {
+            if (!gameData.currentBoss) return;
+            
+            const damage = 50 + (gameData.zone * 25);
+            gameData.bossHP -= damage;
+            
+            // Create attack particles
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.textContent = '⚔️';
+                    particle.style.left = `${50 + (Math.random() - 0.5) * 100}%`;
+                    particle.style.top = `${50 + (Math.random() - 0.5) * 100}%`;
+                    particle.style.fontSize = `${20 + Math.random() * 15}px`;
+                    document.querySelector('.fish-catch-display').appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (particle.parentNode) particle.parentNode.removeChild(particle);
+                    }, 1000);
+                }, i * 50);
+            }
+            
+            if (gameData.bossHP <= 0) {
+                // Boss defeated
+                gameData.coins += gameData.currentBoss.reward;
+                gameData.bossesDefeated++;
+                gameData.achievements.boss_slayer = true;
+                
+                // Hide boss elements
+                document.getElementById('bossBar').style.display = 'none';
+                document.getElementById('attackBtn').style.display = 'none';
+                
+                // Show victory
+                const catchDisplay = document.getElementById('catchDisplay');
+                catchDisplay.innerHTML = `
+                    <div class="caught-fish-emoji">🎉</div>
+                    <div class="caught-fish-name" style="color: var(--success);">BOSS DEFEATED!</div>
+                    <div class="rarity-badge" style="background: var(--success); margin: 15px auto; padding: 10px 20px; border-radius: 20px; font-weight: bold;">
+                        VICTORY
+                    </div>
+                    <div class="fish-details">
+                        <div class="fish-stat">
+                            <div class="stat-label">Reward</div>
+                            <div class="stat-value highlight">+${gameData.currentBoss.reward} 🪙</div>
+                        </div>
+                        <div class="fish-stat">
+                            <div class="stat-label">Total Bosses</div>
+                            <div class="stat-value">${gameData.bossesDefeated}</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Create victory particles
+                for (let i = 0; i < 25; i++) {
+                    setTimeout(() => {
+                        const particle = document.createElement('div');
+                        particle.className = 'particle';
+                        particle.textContent = ['✨', '🌟', '🎉', '🏆'][Math.floor(Math.random() * 4)];
+                        particle.style.left = `${50 + (Math.random() - 0.5) * 100}%`;
+                        particle.style.top = `${50 + (Math.random() - 0.5) * 100}%`;
+                        particle.style.fontSize = `${20 + Math.random() * 20}px`;
+                        document.querySelector('.fish-catch-display').appendChild(particle);
+                        
+                        setTimeout(() => {
+                            if (particle.parentNode) particle.parentNode.removeChild(particle);
+                        }, 1500);
+                    }, i * 100);
+                }
+                
+                gameData.currentBoss = null;
+            }
+            
+            updateBossBar();
+            checkAchievements();
+            updateUI();
+            saveGame();
+        }
+
+        function updateBossBar() {
+            const percent = (gameData.bossHP / gameData.bossMaxHP) * 100;
+            const bossBar = document.getElementById('bossHealth');
+            bossBar.style.width = `${percent}%`;
+            bossBar.textContent = `${Math.round(percent)}%`;
+            
+            // Color based on health
+            if (percent > 60) {
+                bossBar.style.background = 'linear-gradient(90deg, #4caf50, #8bc34a)';
+            } else if (percent > 30) {
+                bossBar.style.background = 'linear-gradient(90deg, #ff9800, #ffc107)';
+            } else {
+                bossBar.style.background = 'linear-gradient(90deg, #f44336, #ef5350)';
+            }
+        }
+
+        // ================= BAIT SYSTEM =================
+        function renderBaitShop() {
+            const shop = document.getElementById('baitShop');
+            let html = '';
+            
+            gameData.baits.forEach(bait => {
+                const canAfford = gameData.coins >= bait.price;
+                const hasBait = gameData.activeBaits.some(b => b.id === bait.id);
+                
+                html += `
+                    <div class="bait-item" onclick="buyBait('${bait.id}')" 
+                         style="opacity: ${canAfford ? '1' : '0.6'}; cursor: ${canAfford ? 'pointer' : 'not-allowed'}">
+                        <div class="bait-icon">${bait.emoji}</div>
+                        <div class="bait-info">
+                            <div class="bait-name">${bait.name}</div>
+                            <div class="bait-desc">${bait.desc}</div>
+                            <div class="bait-price">${bait.price} 🪙</div>
+                        </div>
+                        ${hasBait ? '<div style="color: var(--success); font-size: 1.5rem;">✓</div>' : ''}
+                    </div>
+                `;
+            });
+            
+            shop.innerHTML = html;
+        }
+
+        function buyBait(baitId) {
+            const bait = gameData.baits.find(b => b.id === baitId);
+            if (!bait || gameData.coins < bait.price) return;
+            
+            gameData.coins -= bait.price;
+            gameData.activeBaits.push({
+                id: bait.id,
+                name: bait.name,
+                emoji: bait.emoji,
+                effect: bait.effect,
+                duration: bait.duration,
+                startTime: Date.now()
+            });
+            
+            // Update active baits display
+            updateActiveBaits();
+            
+            // Check bait master achievement
+            if (gameData.activeBaits.length >= 10) {
+                gameData.achievements.bait_master = true;
+            }
+            
+            updateUI();
+            renderBaitShop();
+            saveGame();
+        }
+
+        function useBait(baitType) {
+            // This would activate a specific bait
+            const bait = gameData.baits.find(b => b.id === baitType);
+            if (bait) {
+                buyBait(baitType);
+            }
+        }
+
+        function updateActiveBaits() {
+            const now = Date.now();
+            // Remove expired baits
+            gameData.activeBaits = gameData.activeBaits.filter(bait => {
+                return (now - bait.startTime) < (bait.duration * 60000); // Convert minutes to ms
+            });
+            
+            const container = document.getElementById('activeBaits');
+            let html = '';
+            
+            gameData.activeBaits.forEach(bait => {
+                const timeLeft = Math.max(0, bait.duration - Math.floor((now - bait.startTime) / 60000));
+                html += `
+                    <div class="bait-item">
+                        <div class="bait-icon">${bait.emoji}</div>
+                        <div class="bait-info">
+                            <div class="bait-name">${bait.name}</div>
+                            <div class="bait-desc">${timeLeft}min remaining</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (gameData.activeBaits.length === 0) {
+                html = '<div style="text-align: center; opacity: 0.7;">No active baits</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // ================= ACHIEVEMENTS =================
+        function renderAchievements() {
+            const container = document.getElementById('achievementList');
+            let html = '';
+            let unlocked = 0;
+            
+            gameData.achievementsList.forEach(achievement => {
+                const isUnlocked = gameData.achievements[achievement.id] || false;
+                if (isUnlocked) unlocked++;
+                
+                html += `
+                    <div class="achievement-item ${isUnlocked ? 'unlocked' : ''} ${achievement.secret ? 'secret' : ''}">
+                        <div class="achievement-icon">${achievement.icon}</div>
+                        <div>
+                            <div style="font-weight: bold;">${achievement.name} ${isUnlocked ? '✅' : '🔒'}</div>
+                            <div style="font-size: 0.9rem; opacity: 0.8;">${achievement.desc}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            document.getElementById('achievementCount').textContent = `${unlocked}/${gameData.achievementsList.length}`;
+        }
+
+        function checkAchievements() {
+            // Coin collector
+            if (gameData.coins >= 1000 && !gameData.achievements.coin_collector) {
+                gameData.achievements.coin_collector = true;
+            }
+            
+            // Pity breaker
+            if (gameData.pity >= 100 && !gameData.achievements.pity_breaker) {
+                gameData.achievements.pity_breaker = true;
+            }
+            
+            // Rich angler
+            if (gameData.coins >= 10000 && !gameData.achievements.rich_angler) {
+                gameData.achievements.rich_angler = true;
+            }
+            
+            // Legend hunter
+            const legendaryCount = Object.keys(gameData.fishDex).filter(id => id.startsWith('legendary')).length;
+            if (legendaryCount >= 5 && !gameData.achievements.legend_hunter) {
+                gameData.achievements.legend_hunter = true;
+            }
+            
+            // Update if any achievements were unlocked
+            renderAchievements();
+        }
+
+        // ================= FISHDEX =================
+        function renderFishDex() {
+            const grid = document.getElementById('fishdexGrid');
+            let html = '';
+            
+            // Show all fish types
+            Object.keys(gameData.fishList).forEach(rarity => {
+                gameData.fishList[rarity].forEach(fish => {
+                    const fishId = `${rarity}_${fish.name}`;
+                    const caught = gameData.fishDex[fishId];
+                    const isSecret = rarity === 'secret';
+                    const canCatch = fish.zones.includes(gameData.zone);
+                    const zoneClass = `zone-${fish.zones[0]}`;
+                    
+                    html += `
+                        <div class="fishdex-card ${caught ? 'caught' : ''} ${isSecret ? 'secret' : ''} ${zoneClass}" 
+                             style="opacity: ${canCatch ? '1' : '0.5'};"
+                             title="${fish.name}\n${fish.flavor}\n${caught ? `Caught ${caught.count}x` : 'Not caught yet'}\nZone: ${fish.zones.map(z => gameData.zones[z].name).join(', ')}">
+                            <div class="fishdex-emoji">${fish.emoji}</div>
+                            <div style="font-size: 0.8rem; margin-top: 5px;">${caught ? '✓' : '?'}</div>
+                            <div style="font-size: 0.7rem; opacity: 0.8; margin-top: 3px;">${rarity}</div>
+                        </div>
+                    `;
+                });
+            });
+            
+            grid.innerHTML = html;
+            document.getElementById('secretFish').textContent = `${gameData.secretFishFound}/5`;
+        }
+
+        // ================= ZONE SYSTEM =================
+        function nextZone() {
+            if (gameData.zone < gameData.zones.length - 1) {
+                gameData.zone++;
+                updateBackground();
+                updateUI();
+                saveGame();
+                
+                // Show zone transition message
+                const catchDisplay = document.getElementById('catchDisplay');
+                catchDisplay.innerHTML = `
+                    <div class="caught-fish-emoji">🌍</div>
+                    <div class="caught-fish-name">Entering ${gameData.zones[gameData.zone].name}!</div>
+                    <div class="fish-details">
+                        <div class="fish-stat">
+                            <div class="stat-label">Zone</div>
+                            <div class="stat-value">${gameData.zones[gameData.zone].name}</div>
+                        </div>
+                        <div class="fish-stat">
+                            <div class="stat-label">Fish Count</div>
+                            <div class="stat-value">${gameData.zones[gameData.zone].fishCount}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function updateBackground() {
+            const zone = gameData.zones[gameData.zone];
+            document.body.style.background = `linear-gradient(135deg, ${zone.color1}, ${zone.color2})`;
+        }
+
+        // ================= UI UPDATES =================
+        function updateUI() {
+            document.getElementById('coins').textContent = gameData.coins.toLocaleString();
+            document.getElementById('pity').textContent = gameData.pity;
+            document.getElementById('zone').textContent = gameData.zones[gameData.zone].name;
+            document.getElementById('rod').textContent = "Stick Rod";
+            document.getElementById('totalFish').textContent = gameData.totalCatches;
+            
+            // Update active baits timer
+            updateActiveBaits();
+        }
+
+        // ================= UTILITY FUNCTIONS =================
+        function switchTab(tabName, element) {
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            element.classList.add('active');
+            
+            // Show selected tab
+            document.getElementById('statsTab').classList.add('hidden');
+            document.getElementById('fishdexTab').classList.add('hidden');
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+        }
+
+        function toggleSidebar(side) {
+            const sidebar = document.querySelector(`.${side}-sidebar`);
+            sidebar.classList.toggle('active');
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // ================= SAVE SYSTEM =================
+        function saveGame() {
+            localStorage.setItem('fishingGachaSave', JSON.stringify(gameData));
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem('fishingGachaSave');
+            if (saved) {
+                try {
+                    const loaded = JSON.parse(saved);
+                    Object.assign(gameData, loaded);
+                } catch (e) {
+                    console.log('Starting new game');
+                }
+            }
+        }
+
+        // ================= INITIALIZE =================
+        window.onload = init;
+        setInterval(updateActiveBaits, 10000); // Update baits every 10 seconds
+    </script>
+</body>
+</html>
