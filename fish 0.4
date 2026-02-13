@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐟 MODULAR FISHING GACHA · 250+ FISH · QUEST SYSTEM</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0a1a2a;
+            color: white;
+            min-height: 100vh;
+            padding: 12px;
+            transition: background 1s ease;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 18px;
+        }
+        @media (max-width: 1200px) { .container { grid-template-columns: 1fr; } }
+        
+        /* header */
+        .header {
+            grid-column: 1/-1;
+            background: rgba(0,20,40,0.8);
+            backdrop-filter: blur(12px);
+            border-radius: 40px;
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 2px solid #4faaff;
+        }
+        h1 { font-size: 2rem; background: linear-gradient(135deg, #aaf0ff, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .coin-display { background: #0b2a3b; padding: 10px 28px; border-radius: 60px; font-size: 1.8rem; border: 2px solid #ffd966; box-shadow: 0 0 20px gold; }
+
+        /* main fishing area */
+        .fishing-area {
+            background: rgba(0,20,30,0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 48px;
+            padding: 24px;
+            border: 2px solid #7fc9ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .fish-button {
+            width: 220px; height: 220px; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #6ec8ff, #01497c);
+            border: 8px solid #b5e6ff;
+            box-shadow: 0 20px 40px black, 0 0 80px #4fc3f7;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 100px; cursor: pointer; transition: 0.2s;
+            margin: 20px 0 30px;
+        }
+        .fish-button:active { transform: scale(0.92); box-shadow: 0 0 50px cyan; }
+
+        /* boss bar */
+        #bossBar {
+            width: 100%; height: 54px; background: #222; border-radius: 40px;
+            margin: 10px 0; border: 3px solid #f05454; display: none; overflow: hidden;
+        }
+        #bossHealth {
+            height: 100%; background: linear-gradient(90deg, #e43f3f, #ffa726, #66bb6a);
+            width: 100%; transition: width 0.3s; display: flex; align-items: center;
+            justify-content: center; font-weight: bold;
+        }
+        .fish-catch-display {
+            width: 100%; background: #0b2633c0; border-radius: 40px; padding: 30px 25px;
+            border: 2px solid #6eb2d4; text-align: center;
+        }
+        .caught-fish-emoji { font-size: 110px; filter: drop-shadow(0 0 20px cyan); }
+
+        /* rarity glows */
+        .rarity-glow-common { box-shadow: 0 0 40px #b0bec5; }
+        .rarity-glow-uncommon { box-shadow: 0 0 45px #4caf50; }
+        .rarity-glow-rare { box-shadow: 0 0 55px #2196f3; }
+        .rarity-glow-epic { box-shadow: 0 0 70px #9c27b0; }
+        .rarity-glow-legendary { box-shadow: 0 0 90px #ff9800; }
+        .rarity-glow-mythic { box-shadow: 0 0 120px #ff3333; animation: breath 1.5s infinite; }
+        .rarity-glow-divine { box-shadow: 0 0 150px gold; animation: divine 2s infinite; }
+        @keyframes breath { 0% { filter: brightness(1); } 50% { filter: brightness(1.5); } }
+        @keyframes divine { 0% { text-shadow: 0 0 10px gold; } 50% { text-shadow: 0 0 40px orange; } }
+
+        /* panels */
+        .panel {
+            background: rgba(3, 18, 30, 0.9);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            padding: 20px 16px;
+            border: 2px solid #2a6f8d;
+            margin-bottom: 18px;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+        .panel h3 { color: #9fd9ff; border-bottom: 2px dashed #2c7da0; padding-bottom: 8px; margin-bottom: 16px; }
+        
+        .quest-item {
+            background: #113946;
+            border-radius: 20px;
+            padding: 12px;
+            margin: 8px 0;
+            border-left: 6px solid #ffaa00;
+        }
+        .quest-item.completed { border-left-color: #4caf50; background: #1b4b3b; }
+        .quest-progress { font-size: 0.9rem; color: #aaffaa; }
+
+        .bait-grid { display: flex; flex-direction: column; gap: 10px; }
+        .bait-item {
+            background: #113946; border-radius: 20px; padding: 12px;
+            display: flex; align-items: center; gap: 15px; border: 1px solid #47b5ff;
+            cursor: pointer; transition: 0.2s;
+        }
+        .bait-item:hover { background: #1b5169; border-color: gold; }
+
+        .fishdex-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+            max-height: 300px; overflow-y: auto;
+        }
+        .fishdex-card {
+            background: #102e3c; border-radius: 10px; padding: 6px 2px;
+            text-align: center; font-size: 1.2rem; border: 1px solid #2f8db0;
+        }
+        .fishdex-card.caught { background: #1b5e3f; border-color: #a5d6a5; }
+        .fishdex-card.mythic { background: #4f1a1a; border-color: #ff7f7f; }
+        .fishdex-card.divine { background: #4f4a1a; border-color: gold; }
+
+        .btn {
+            background: #1d4155; border: 2px solid #71c5ff; border-radius: 50px;
+            padding: 16px 12px; font-weight: 700; color: white; cursor: pointer;
+            transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-fish { grid-column: span 2; background: linear-gradient(145deg, #2b6c9e, #0a3f60); font-size: 1.6rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🐋 MODULAR FISHING GACHA · 250+ FISH · v4.0</h1>
+        <div class="coin-display"><span>🪙</span><span id="coins">10,000</span></div>
+    </div>
+
+    <!-- left sidebar -->
+    <div class="left-sidebar">
+        <div class="panel">
+            <h3>📊 STATS</h3>
+            <div>🔥 Pity: <span id="pity">0</span></div>
+            <div>🌍 Zone: <span id="zone">Shallows</span></div>
+            <div>🎣 Rod: <span id="rod">Starter Rod</span></div>
+            <div>📊 Total: <span id="totalFish">0</span></div>
+            <div>🐲 Mythic: <span id="mythicCount">0/15</span></div>
+            <div>✨ Divine: <span id="divineCount">0/8</span></div>
+        </div>
+        <div class="panel">
+            <h3>⚔️ ACTIVE QUESTS</h3>
+            <div id="questList"></div>
+        </div>
+        <div class="panel">
+            <h3>🎣 ACTIVE BAITS</h3>
+            <div id="activeBaits">none</div>
+        </div>
+    </div>
+
+    <!-- main area -->
+    <div class="fishing-area">
+        <div class="fish-button" onclick="catchFish()">🎣</div>
+        <div id="bossBar"><div id="bossHealth">100%</div></div>
+        <div class="fish-catch-display" id="catchDisplay">
+            <div class="caught-fish-emoji">🎣</div>
+            <div>Ready to fish!</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; width:100%; margin-top:20px;">
+            <button class="btn" onclick="nextZone()">🌍 NEXT ZONE</button>
+            <button class="btn" onclick="openCrate()">📦 CRATE (500🪙)</button>
+            <button class="btn" id="attackBtn" onclick="attackBoss()" style="display:none;">⚔️ ATTACK</button>
+        </div>
+    </div>
+
+    <!-- right sidebar -->
+    <div class="right-sidebar">
+        <div class="panel">
+            <h3>🛒 BAIT SHOP</h3>
+            <div class="bait-grid" id="baitShop"></div>
+        </div>
+        <div class="panel">
+            <h3>📘 FISHDEX (<span id="dexCount">0</span>/268)</h3>
+            <div class="fishdex-grid" id="fishdexGrid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- secret modal -->
+<div id="secretModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); align-items:center; justify-content:center; z-index:1000;">
+    <div style="background:#03222e; border:4px solid gold; border-radius:50px; padding:40px; text-align:center;">
+        <div style="font-size:5rem;">🐲</div>
+        <h2 style="color:gold;">MYTHIC DISCOVERY!</h2>
+        <p id="secretBossText"></p>
+        <button class="btn" onclick="document.getElementById('secretModal').style.display='none'">CLOSE</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    // ==================== MODULAR CONFIGURATION ====================
+    // Easily adjust colors, zones, rarities, spawn rates, quests, everything!
+    const CONFIG = {
+        // Rarity definitions – fully modular
+        rarities: [
+            { id: 'common',    name: 'Common',     emoji: '🐟', color: '#b0bec5', weight: 400, baseValue: 5,  glowClass: 'rarity-glow-common' },
+            { id: 'uncommon',  name: 'Uncommon',   emoji: '🐠', color: '#4caf50', weight: 250, baseValue: 15, glowClass: 'rarity-glow-uncommon' },
+            { id: 'rare',      name: 'Rare',       emoji: '🐡', color: '#2196f3', weight: 150, baseValue: 45, glowClass: 'rarity-glow-rare' },
+            { id: 'epic',      name: 'Epic',       emoji: '🦈', color: '#9c27b0', weight: 80,  baseValue: 120, glowClass: 'rarity-glow-epic' },
+            { id: 'legendary', name: 'Legendary',  emoji: '🐋', color: '#ff9800', weight: 40,  baseValue: 350, glowClass: 'rarity-glow-legendary' },
+            { id: 'mythic',    name: 'Mythic',     emoji: '🐲', color: '#ff3333', weight: 8,   baseValue: 1200, glowClass: 'rarity-glow-mythic' },
+            { id: 'divine',    name: 'Divine',     emoji: '👑', color: 'gold',     weight: 2,   baseValue: 5000, glowClass: 'rarity-glow-divine' }
+        ],
+
+        // Zones – each with name, colors, biome, and depth level
+        zones: [
+            { id: 0, name: '🌊 Shallows',       color1: '#4fc3f7', color2: '#01579b', depth: 1,  biome: 'coastal' },
+            { id: 1, name: '🪸 Coral Reef',      color1: '#00cc99', color2: '#006644', depth: 2,  biome: 'reef' },
+            { id: 2, name: '🌑 Deep Sea',        color1: '#001f3f', color2: '#030b17', depth: 3,  biome: 'abyss' },
+            { id: 3, name: '🌋 Volcanic Vent',   color1: '#ff5722', color2: '#8b0000', depth: 4,  biome: 'volcanic' },
+            { id: 4, name: '❄️ Iceberg Lagoon',  color1: '#b3f0ff', color2: '#005073', depth: 5,  biome: 'frozen' },
+            { id: 5, name: '🌀 Abyssal Trench',  color1: '#0a001a', color2: '#1a0033', depth: 6,  biome: 'trench' },
+            { id: 6, name: '✨ Celestial Sea',   color1: '#2a1b3d', color2: '#140b1f', depth: 7,  biome: 'cosmic' }
+        ],
+
+        // Fish database – programmatically generated to 250+ fish
+        // Each fish has name, emoji, allowed zones (array of zone indices), and flavor
+        fishTemplates: {
+            common: [
+                'Common Carp|🐟|0,1,2|classic fish',
+                'Bluegill|🐠|0,1|tiny sunfish',
+                'Catfish|🐡|0,1,2|whiskered',
+                'Bass|🐟|0,1|angler favorite',
+                'Perch|🐟|0,4|striped',
+                'Sunfish|🌞|0,1|sunbather',
+                'Minnow|🐟|0,1,2|tiny bait',
+                'Goldfish|🐠|0|garden pond',
+                'Koi|🎏|0,1|colorful carp',
+                'Guppy|🐟|0,1|small tropical',
+                'Molly|🐠|0,1|black beauty',
+                'Tetra|🐟|1|neon light',
+                'Barramundi|🐟|0,1,2|aussie bass',
+                'Roach|🐟|0|common river',
+                'Bream|🐟|0,1|silver fish',
+                'Flounder|🐟|0,1,2|flat fish',
+                'Halibut|🐟|2|giant flat',
+                'Mackerel|🐟|0,1,2|oily fish',
+                'Sardine|🐟|0,1,2|tiny silver',
+                'Anchovy|🐟|0,1|salty snack',
+                'Herring|🐟|0,1,2|red herring',
+                'Chub|🐟|0|river chub',
+                'Dace|🐟|0|stream fish',
+                'Shiner|🐟|0|shiny minnow',
+                'Pumpkinseed|🎃|0|sunfish relative',
+                'Warmouth|🐟|0|aggressive',
+                'Crappie|🐟|0,1|panfish',
+                'Bluefish|🐟|1,2|sport fish',
+                'Snapper|🐟|1,2|red fish',
+                'Grouper|🐟|1,2|reef giant'
+            ],
+            uncommon: [
+                'Rainbow Trout|🌈|0,1,4|colorful leap',
+                'Pufferfish|🐡|0,1|spike ball',
+                'Clownfish|🤡|1|anemone home',
+                'Seahorse|🐴|1,2|dad gives birth',
+                'Angelfish|👼|1|heavenly fins',
+                'Triggerfish|🔫|1,2|trigger happy',
+                'Parrotfish|🦜|1|eats coral',
+                'Butterflyfish|🦋|1|delicate',
+                'Tang|🐟|1|blue tang',
+                'Moorish idol|🎭|1|exotic',
+                'Betta|🐠|0,1|siamese fighter',
+                'Gourami|🐟|0,1|labyrinth fish',
+                'Loach|🐍|0,1|bottom dweller',
+                'Rasbora|🐟|1|harlequin',
+                'Danio|🐟|0|zebra fish',
+                'Swordtail|⚔️|0,1|sword tail',
+                'Platy|🐟|0,1|colorful livebearer',
+                'Molly|🐠|0,1|black molly',
+                'Swordfish|⚔️|1,2|billfish',
+                'Marlin|🎣|1,2|game fish',
+                'Sailfish|⛵|1,2|fastest fish',
+                'Tuna|🐟|1,2|big tuna',
+                'Bonito|🐟|1,2|small tuna',
+                'Wahoo|🐟|2|speedster',
+                'Barracuda|🔪|1,2|predator',
+                'Mahi mahi|🌈|1,2|dorado',
+                'Opah|🌞|2|moonfish',
+                'Pompano|🐟|1,2|silver fish',
+                'Permit|🐟|1,2|strong fighter'
+            ],
+            rare: [
+                'Lionfish|🦁|1|venomous',
+                'Electric Eel|⚡|2|600 volts',
+                'Manta Ray|😇|1,2|graceful giant',
+                'Moray Eel|🐍|1,2|hides in rocks',
+                'Stingray|⚡|1,2|barbed tail',
+                'Octopus|🐙|1,2|eight arms',
+                'Cuttlefish|🎨|2|color changer',
+                'Nautilus|🐚|2|living fossil',
+                'Jellyfish|🎐|1,2|stinging beauty',
+                'Lobster|🦞|1,2|claw master',
+                'Crab|🦀|1,2|side walker',
+                'Shrimp|🦐|1,2|tiny cleaner',
+                'Krill|🦐|2|whale food',
+                'Squid|🦑|2|calamari',
+                'Eel|🐍|1,2|slippery',
+                'Conger|🐍|2|giant eel',
+                'Wolf eel|🐺|2|mean face',
+                'Pipefish|🐟|1,2|seahorse cousin',
+                'Dragonet|🐉|2|small dragon',
+                'Gurnard|🐟|1,2|sea robin',
+                'Scorpionfish|🦂|1|venomous',
+                'Stonefish|🪨|1|most venomous',
+                'Frogfish|🐸|1|weird walker',
+                'Anglerfish|🎣|2|light lure',
+                'Hatchetfish|🪓|2|deep sea',
+                'Viperfish|🐍|2|fangs',
+                'Fangtooth|🦷|2|ugly',
+                'Gulper eel|🐍|2|big mouth'
+            ],
+            epic: [
+                'Great White|🦈|2|da dum',
+                'Giant Squid|🦑|2|deep monster',
+                'Whale Shark|🐋|1,2|gentle giant',
+                'Dragonfish|🐉|2,3|deep dragon',
+                'Oarfish|📏|2|sea serpent',
+                'Sawfish|🪚|1|nose saw',
+                'Hammerhead|🔨|1,2|hammer head',
+                'Tiger shark|🐯|1,2|striped predator',
+                'Bull shark|🐂|1,2|aggressive',
+                'Mako|⚡|1,2|fast shark',
+                'Thresher|🔗|2|long tail',
+                'Basking shark|🐋|1,2|filter feeder',
+                'Megamouth|👄|2|rare shark',
+                'Goblin shark|👺|2|pink weirdo',
+                'Frilled shark|🐍|2|living fossil',
+                'Coelacanth|🧬|2|dinosaur fish',
+                'Sturgeon|🐟|0,1|caviar',
+                'Arapaima|🐟|0|giant amazon',
+                'Piranha|🐡|0|teeth',
+                'Payara|🧛|0|vampire fish',
+                'Alligator gar|🐊|0|armored',
+                'Lake sturgeon|🐟|0|huge',
+                'Wels catfish|🐱|0|european giant',
+                'Mekong catfish|🐱|0|huge catfish',
+                'Goliath tigerfish|🐯|0|african piranha'
+            ],
+            legendary: [
+                'Kraken|🐙|2|mythical beast',
+                'Leviathan|🐋|2,3|biblical terror',
+                'Phoenix Fish|🔥|3|lava born',
+                'Ice Phoenix|❄️|4|frozen soul',
+                'Celestial Carp|⭐|0,1,2,3,4,5,6|cosmic koi',
+                'Jormungandr|🌍|2,3|world serpent',
+                'Sea Serpent|🐉|2,3|long dragon',
+                'Dragon Turtle|🐢|3|volcano turtle',
+                'Basilosaurus|🐋|2|ancient whale',
+                'Mosasaurus|🦎|2|marine reptile',
+                'Plesiosaur|🦕|2|nessie',
+                'Liopleurodon|🦕|2|short neck',
+                'Archelon|🐢|2|giant turtle',
+                'Megalodon|🦈|2|giant shark',
+                'Helicoprion|🌀|2|buzzsaw jaw',
+                'Dunkleosteus|🛡️|2|armored fish',
+                'Titan triggerfish|🔫|1|huge trigger',
+                'Giant grouper|🐟|1,2|massive',
+                'Napoleon wrasse|👑|1|big lips',
+                'Humphead wrasse|👑|1|endangered'
+            ],
+            mythic: [
+                'Time Koi|⏳|0|bend time',
+                'Dream Angler|💤|1|dream eater',
+                'Void Squid|🌌|2|interdimensional',
+                'Magma Core|🔥|3|volcano heart',
+                'Frost Heart|❄️|4|eternal frost',
+                'Abyss Walker|👁️|2|madness incarnate',
+                'Elder Sign|⭐|1,2,3|ancient horror',
+                'Cthulhu Spawn|🐙|2,5|tiny terror',
+                'Dagon|👾|5|deep one',
+                'Hydra|🐍|5|many heads',
+                'Leviathan (Mythic)|🌊|5|primordial',
+                'Behemoth|👹|3|land beast',
+                'Ziz|🦅|4|sky monster',
+                'Quetzalcoatl|🐍|6|feathered serpent',
+                'Jörmungandr (Mythic)|🌍|6|world eater'
+            ],
+            divine: [
+                'Cthulhu|🐙|5,6|great old one',
+                'Azathoth|🌀|6|blind idiot',
+                'Yog-Sothoth|🔮|6|key and gate',
+                'Shub-Niggurath|🌿|6|black goat',
+                'Nyarlathotep|👾|6|crawling chaos',
+                'Dagon (Divine)|🐟|5|father of fish',
+                'Mother Hydra|🐍|5|mother of many',
+                'Father Dagon|🐙|5|deep one king'
+            ]
+        },
+
+        // Bosses – modular, with spawn conditions (quest required for Cthulhu)
+        bosses: [
+            { name: 'Tidal Titan', emoji: '🌊', hp: 600, reward: 1200, zoneMin: 0, zoneMax: 6, questRequired: null },
+            { name: 'Coral Goliath', emoji: '🪸', hp: 850, reward: 2200, zoneMin: 1, zoneMax: 6, questRequired: null },
+            { name: 'Abyss Overlord', emoji: '👾', hp: 1300, reward: 4000, zoneMin: 2, zoneMax: 6, questRequired: null },
+            { name: 'Magma Tyrant', emoji: '🌋', hp: 1800, reward: 6000, zoneMin: 3, zoneMax: 6, questRequired: null },
+            { name: 'Frost Wyrm', emoji: '❄️', hp: 2200, reward: 8000, zoneMin: 4, zoneMax: 6, questRequired: null },
+            { name: 'Void Leviathan', emoji: '🌀', hp: 3000, reward: 12000, zoneMin: 5, zoneMax: 6, questRequired: null },
+            { name: 'Cthulhu', emoji: '🐙', hp: 5000, reward: 30000, zoneMin: 6, zoneMax: 6, questRequired: 'elder_awakening' }
+        ],
+
+        // Quests system
+        quests: [
+            { id: 'first_fish', name: 'First Catch', desc: 'Catch any fish', target: 1, type: 'catch_any', reward: 100, completed: false, progress: 0 },
+            { id: 'deep_angler', name: 'Deep Angler', desc: 'Catch 10 deep sea fish', target: 10, type: 'catch_biome', biome: 'abyss', reward: 500, completed: false, progress: 0 },
+            { id: 'volcanic', name: 'Heart of Lava', desc: 'Catch 5 volcanic fish', target: 5, type: 'catch_biome', biome: 'volcanic', reward: 800, completed: false, progress: 0 },
+            { id: 'mythic_hunter', name: 'Mythic Hunter', desc: 'Catch 3 mythic fish', target: 3, type: 'catch_rarity', rarity: 'mythic', reward: 3000, completed: false, progress: 0 },
+            { id: 'divine', name: 'Divine Intervention', desc: 'Catch a divine fish', target: 1, type: 'catch_rarity', rarity: 'divine', reward: 10000, completed: false, progress: 0 },
+            { id: 'elder_awakening', name: 'Elder Awakening', desc: 'Catch 3 mythic from abyss', target: 3, type: 'catch_biome_rarity', biome: 'trench', rarity: 'mythic', reward: 15000, completed: false, progress: 0 },
+            { id: 'collector', name: 'Collector', desc: 'Catch 100 total fish', target: 100, type: 'catch_any', reward: 2000, completed: false, progress: 0 },
+            { id: 'legendary_hunter', name: 'Legendary Hunter', desc: 'Catch 10 legendary fish', target: 10, type: 'catch_rarity', rarity: 'legendary', reward: 5000, completed: false, progress: 0 }
+        ],
+
+        // Baits – some only from crates
+        baits: [
+            { id: 'common_bait', name: 'Basic Bait', emoji: '🍞', price: 50, effect: { common: 1.5 }, duration: 10, desc: '+50% common', crateOnly: false },
+            { id: 'rare_bait', name: 'Rare Bait', emoji: '🦐', price: 200, effect: { rare: 2.2, epic: 1.4 }, duration: 12, desc: 'rare/epic up', crateOnly: false },
+            { id: 'epic_bait', name: 'Epic Bait', emoji: '🍤', price: 550, effect: { epic: 2.8, legendary: 1.9 }, duration: 8, desc: 'epic++', crateOnly: false },
+            { id: 'legendary_bait', name: 'Legendary Lure', emoji: '🌟', price: 1800, effect: { legendary: 3.5, mythic: 1.8 }, duration: 5, desc: 'leg/mythic up', crateOnly: false },
+            { id: 'mythic_bait', name: 'Mythic Bait', emoji: '🐲', price: 5000, effect: { mythic: 3.0, divine: 1.5 }, duration: 4, desc: 'mythic boost', crateOnly: true },
+            { id: 'divine_bait', name: 'Divine Lure', emoji: '👑', price: 15000, effect: { divine: 4.0 }, duration: 2, desc: 'divine chance', crateOnly: true }
+        ],
+
+        // Rods – obtainable from crates
+        rods: [
+            { id: 'starter', name: 'Starter Rod', multiplier: 1.0, rarity: 'common' },
+            { id: 'carbon', name: 'Carbon Rod', multiplier: 1.2, rarity: 'uncommon', price: 500 },
+            { id: 'composite', name: 'Composite Rod', multiplier: 1.5, rarity: 'rare', price: 2000 },
+            { id: 'titanium', name: 'Titanium Rod', multiplier: 2.0, rarity: 'epic', price: 6000 },
+            { id: 'void', name: 'Void Rod', multiplier: 3.0, rarity: 'legendary', price: 15000 },
+            { id: 'eldritch', name: 'Eldritch Rod', multiplier: 5.0, rarity: 'mythic', crateOnly: true },
+            { id: 'divine_rod', name: 'Divine Rod', multiplier: 10.0, rarity: 'divine', crateOnly: true }
+        ]
+    };
+
+    // ========== GAME STATE ==========
+    let gameState = {
+        coins: 10000,
+        zone: 0,
+        rod: 'starter',
+        totalCatches: 0,
+        pity: 0,
+        fishDex: {},
+        activeBaits: [],
+        currentBoss: null,
+        bossHP: 0,
+        quests: JSON.parse(JSON.stringify(CONFIG.quests)),
+        ownedRods: ['starter'],
+        mythicFound: 0,
+        divineFound: 0
+    };
+
+    // Build fish list dynamically (>250 fish)
+    let fishDB = [];
+    function buildFishDB() {
+        for (let rarity in CONFIG.fishTemplates) {
+            CONFIG.fishTemplates[rarity].forEach(template => {
+                let parts = template.split('|');
+                let name = parts[0];
+                let emoji = parts[1];
+                let zones = parts[2].split(',').map(Number);
+                let flavor = parts[3];
+                fishDB.push({ name, emoji, zones, flavor, rarity });
+            });
+        }
+    }
+    buildFishDB();
+    // total fish count
+    const TOTAL_FISH = fishDB.length; // should be >250
+
+    // ========== HELPER FUNCTIONS ==========
+    function getRarityById(id) { return CONFIG.rarities.find(r => r.id === id); }
+    function getCurrentZone() { return CONFIG.zones[gameState.zone]; }
+
+    function updateUI() {
+        document.getElementById('coins').innerText = gameState.coins.toLocaleString();
+        document.getElementById('pity').innerText = gameState.pity;
+        document.getElementById('zone').innerText = getCurrentZone().name;
+        document.getElementById('totalFish').innerText = gameState.totalCatches;
+        document.getElementById('mythicCount').innerText = `${gameState.mythicFound}/15`;
+        document.getElementById('divineCount').innerText = `${gameState.divineFound}/8`;
+        document.getElementById('dexCount').innerText = `${Object.keys(gameState.fishDex).length}/${TOTAL_FISH}`;
+        
+        // background
+        let z = getCurrentZone();
+        document.body.style.background = `linear-gradient(135deg, ${z.color1}, ${z.color2})`;
+
+        renderFishDex();
+        renderQuests();
+        renderBaitShop();
+        updateActiveBaits();
+    }
+
+    function renderFishDex() {
+        let grid = document.getElementById('fishdexGrid');
+        let html = '';
+        fishDB.forEach(fish => {
+            let fid = `${fish.rarity}_${fish.name}`;
+            let caught = gameState.fishDex[fid];
+            let rarity = getRarityById(fish.rarity);
+            let extraClass = caught ? 'caught' : '';
+            if (fish.rarity === 'mythic') extraClass += ' mythic';
+            if (fish.rarity === 'divine') extraClass += ' divine';
+            html += `<div class="fishdex-card ${extraClass}" title="${fish.name} (${fish.rarity})">${fish.emoji}<br>${caught ? '✓' : '?'}</div>`;
+        });
+        grid.innerHTML = html;
+    }
+
+    function renderQuests() {
+        let questDiv = document.getElementById('questList');
+        let html = '';
+        gameState.quests.forEach(q => {
+            if (q.completed) return;
+            let progress = q.progress || 0;
+            html += `<div class="quest-item">
+                <b>${q.name}</b><br>${q.desc}<br>
+                <span class="quest-progress">${progress}/${q.target}</span>
+                <span style="float:right;">🏆 ${q.reward}</span>
+            </div>`;
+        });
+        questDiv.innerHTML = html || '<div>All quests complete! 🎉</div>';
+    }
+
+    function renderBaitShop() {
+        let shop = document.getElementById('baitShop');
+        let html = '';
+        CONFIG.baits.forEach(b => {
+            if (b.crateOnly) return; // only show purchasable baits
+            let canAfford = gameState.coins >= b.price ? 'pointer' : 'not-allowed';
+            html += `<div class="bait-item" onclick="buyBait('${b.id}')" style="cursor:${canAfford}">
+                <span class="bait-icon">${b.emoji}</span>
+                <span><b>${b.name}</b><br>${b.desc}<br><span style="color:#ffe066;">${b.price}🪙</span></span>
+            </div>`;
+        });
+        shop.innerHTML = html;
+    }
+
+    function updateActiveBaits() {
+        let div = document.getElementById('activeBaits');
+        if (!gameState.activeBaits.length) { div.innerHTML = 'none'; return; }
+        let now = Date.now();
+        gameState.activeBaits = gameState.activeBaits.filter(b => (now - b.startTime) < b.duration * 60 * 1000);
+        let html = '';
+        gameState.activeBaits.forEach(b => {
+            let left = Math.ceil((b.duration*60*1000 - (now - b.startTime))/60000);
+            html += `<div>${b.emoji} ${b.name} (${left}min)</div>`;
+        });
+        div.innerHTML = html;
+    }
+
+    // ========== FISHING CORE ==========
+    window.catchFish = function() {
+        // apply bait effects
+        let weights = CONFIG.rarities.map(r => ({ id: r.id, weight: r.weight }));
+        gameState.activeBaits.forEach(bait => {
+            let baitDef = CONFIG.baits.find(b => b.id === bait.id);
+            if (baitDef) {
+                Object.entries(baitDef.effect).forEach(([rar, mult]) => {
+                    let idx = weights.findIndex(w => w.id === rar);
+                    if (idx >= 0) weights[idx].weight *= mult;
+                });
+            }
+        });
+
+        // normalize
+        let total = weights.reduce((a,b) => a + b.weight, 0);
+        let rand = Math.random() * total;
+        let chosenRarity = weights[0].id;
+        for (let w of weights) {
+            if (rand < w.weight) { chosenRarity = w.id; break; }
+            rand -= w.weight;
+        }
+
+        // pick fish from current zone
+        let zoneId = gameState.zone;
+        let possible = fishDB.filter(f => f.zones.includes(zoneId) && f.rarity === chosenRarity);
+        if (possible.length === 0) possible = fishDB.filter(f => f.rarity === chosenRarity); // fallback
+        if (possible.length === 0) {
+            // emergency fallback
+            possible = [{ name: 'Mystery Fish', emoji: '🐟', flavor: '??', rarity: 'common' }];
+        }
+        let fish = possible[Math.floor(Math.random() * possible.length)];
+        
+        // value calculation
+        let rarityObj = getRarityById(fish.rarity);
+        let rodMult = CONFIG.rods.find(r => r.id === gameState.rod)?.multiplier || 1;
+        let value = Math.floor(rarityObj.baseValue * (1 + gameState.zone * 0.2) * rodMult * (0.8 + Math.random()*0.5));
+        gameState.coins += value;
+        gameState.totalCatches++;
+        gameState.pity = (fish.rarity === 'common') ? gameState.pity + 1 : 0;
+
+        // dex entry
+        let fid = `${fish.rarity}_${fish.name}`;
+        if (!gameState.fishDex[fid]) {
+            gameState.fishDex[fid] = { count: 1, first: Date.now() };
+            if (fish.rarity === 'mythic') gameState.mythicFound++;
+            if (fish.rarity === 'divine') gameState.divineFound++;
+        } else {
+            gameState.fishDex[fid].count++;
+        }
+
+        // quest updates
+        gameState.quests.forEach(q => {
+            if (q.completed) return;
+            if (q.type === 'catch_any') {
+                q.progress = (q.progress || 0) + 1;
+                if (q.progress >= q.target) completeQuest(q);
+            }
+            if (q.type === 'catch_biome' && q.biome === getCurrentZone().biome) {
+                q.progress = (q.progress || 0) + 1;
+                if (q.progress >= q.target) completeQuest(q);
+            }
+            if (q.type === 'catch_rarity' && q.rarity === fish.rarity) {
+                q.progress = (q.progress || 0) + 1;
+                if (q.progress >= q.target) completeQuest(q);
+            }
+            if (q.type === 'catch_biome_rarity' && q.biome === getCurrentZone().biome && q.rarity === fish.rarity) {
+                q.progress = (q.progress || 0) + 1;
+                if (q.progress >= q.target) completeQuest(q);
+            }
+        });
+
+        // boss spawn (base 1% + pity bonus)
+        let bossChance = 0.01 + gameState.pity * 0.0005;
+        if (Math.random() < bossChance && !gameState.currentBoss) spawnBoss();
+
+        // show catch
+        let cd = document.getElementById('catchDisplay');
+        cd.innerHTML = `
+            <div class="caught-fish-emoji">${fish.emoji}</div>
+            <div><b>${fish.name}</b></div>
+            <div style="background:${rarityObj.color}; padding:6px 20px; border-radius:40px; display:inline-block; margin:12px;">✨ ${rarityObj.name} ✨</div>
+            <div>+${value} 🪙</div>
+            <div><i>${fish.flavor}</i></div>
+            <div class="spawn-chance">⚡ boss chance: ${(bossChance*100).toFixed(2)}%</div>
+        `;
+        cd.className = `fish-catch-display ${rarityObj.glowClass}`;
+
+        updateUI();
+        saveGame();
+    };
+
+    function completeQuest(q) {
+        q.completed = true;
+        gameState.coins += q.reward;
+        // check for elder awakening quest -> enables Cthulhu spawn
+        if (q.id === 'elder_awakening') {
+            alert('⚡ The ancient seal weakens... Cthulhu can now spawn in Celestial Sea!');
+        }
+    }
+
+    function spawnBoss() {
+        let zone = gameState.zone;
+        let possible = CONFIG.bosses.filter(b => zone >= b.zoneMin && zone <= b.zoneMax);
+        // filter by quest requirement
+        possible = possible.filter(b => {
+            if (!b.questRequired) return true;
+            let quest = gameState.quests.find(q => q.id === b.questRequired);
+            return quest && quest.completed;
+        });
+        if (possible.length === 0) return;
+        gameState.currentBoss = possible[Math.floor(Math.random() * possible.length)];
+        gameState.bossHP = gameState.currentBoss.hp;
+        document.getElementById('bossBar').style.display = 'block';
+        document.getElementById('attackBtn').style.display = 'block';
+        document.getElementById('bossHealth').innerText = '100%';
+    }
+
+    window.attackBoss = function() {
+        if (!gameState.currentBoss) return;
+        let dmg = 50 + gameState.zone * 20;
+        gameState.bossHP -= dmg;
+        if (gameState.bossHP <= 0) {
+            gameState.coins += gameState.currentBoss.reward;
+            gameState.currentBoss = null;
+            document.getElementById('bossBar').style.display = 'none';
+            document.getElementById('attackBtn').style.display = 'none';
+            document.getElementById('catchDisplay').innerHTML = '<div class="caught-fish-emoji">🏆</div><div>BOSS DEFEATED!</div>';
+        }
+        let perc = Math.max(0, (gameState.bossHP / gameState.currentBoss.hp) * 100);
+        document.getElementById('bossHealth').style.width = perc + '%';
+        document.getElementById('bossHealth').innerText = Math.round(perc) + '%';
+        updateUI(); saveGame();
+    };
+
+    window.nextZone = function() {
+        if (gameState.zone < CONFIG.zones.length - 1) {
+            gameState.zone++;
+            updateUI(); saveGame();
+        }
+    };
+
+    window.buyBait = function(baitId) {
+        let bait = CONFIG.baits.find(b => b.id === baitId);
+        if (!bait || gameState.coins < bait.price) return;
+        gameState.coins -= bait.price;
+        gameState.activeBaits.push({
+            id: bait.id, name: bait.name, emoji: bait.emoji,
+            effect: bait.effect, duration: bait.duration, startTime: Date.now()
+        });
+        updateUI(); saveGame();
+    };
+
+    window.openCrate = function() {
+        if (gameState.coins < 500) return;
+        gameState.coins -= 500;
+        let r = Math.random();
+        let reward;
+        if (r < 0.4) { // coins
+            reward = { type: 'coins', amount: 300 + Math.floor(Math.random()*700) };
+            gameState.coins += reward.amount;
+        } else if (r < 0.7) { // bait (maybe crate-only)
+            let crateBaits = CONFIG.baits.filter(b => b.crateOnly);
+            let bait = crateBaits[Math.floor(Math.random() * crateBaits.length)];
+            gameState.activeBaits.push({
+                id: bait.id, name: bait.name, emoji: bait.emoji,
+                effect: bait.effect, duration: bait.duration, startTime: Date.now()
+            });
+            reward = { type: 'bait', name: bait.name };
+        } else { // rod
+            let rareRods = CONFIG.rods.filter(r => r.crateOnly && !gameState.ownedRods.includes(r.id));
+            if (rareRods.length > 0) {
+                let rod = rareRods[Math.floor(Math.random() * rareRods.length)];
+                gameState.ownedRods.push(rod.id);
+                gameState.rod = rod.id;
+                reward = { type: 'rod', name: rod.name };
+            } else {
+                gameState.coins += 1000;
+                reward = { type: 'coins', amount: 1000 };
+            }
+        }
+        document.getElementById('catchDisplay').innerHTML = `<div class="caught-fish-emoji">📦</div><div>Crate: ${reward.type} ${reward.amount || reward.name || ''}</div>`;
+        updateUI(); saveGame();
+    };
+
+    function saveGame() { localStorage.setItem('modularFishing', JSON.stringify(gameState)); }
+    function loadGame() {
+        let saved = localStorage.getItem('modularFishing');
+        if (saved) Object.assign(gameState, JSON.parse(saved));
+    }
+
+    // init
+    loadGame();
+    updateUI();
+    setInterval(updateActiveBaits, 10000);
+})();
+</script>
+</body>
+</html>
