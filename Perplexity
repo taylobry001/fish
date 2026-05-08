@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover" />
+  <title>🌊 Mythic Waters · Realistic Fishing RPG</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg:#0a0a1a;
+      --panel:#0d1a2e;
+      --panel2:#162a3b;
+      --accent:#5b9bb5;
+      --gold:#ffd966;
+      --text:#e6f7ff;
+      --danger:#ff4444;
+      --success:#4caf92;
+    }
+    body {
+      background: var(--bg);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+      font-family:'Segoe UI',system-ui,sans-serif;
+      padding:8px;
+      background-image:radial-gradient(ellipse at center, #1a1a3a 0%, #0a0a1a 100%);
+      cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><circle cx='12' cy='12' r='8' fill='white' stroke='black' stroke-width='2'/><line x1='12' y1='2' x2='12' y2='8' stroke='black' stroke-width='2'/><line x1='12' y1='16' x2='12' y2='22' stroke='black' stroke-width='2'/><line x1='2' y1='12' x2='8' y2='12' stroke='black' stroke-width='2'/><line x1='16' y1='12' x2='22' y2='12' stroke='black' stroke-width='2'/></svg>") 12 12, crosshair;
+      color: var(--text);
+    }
+    .game-container { display:flex; flex-direction:column; align-items:center; gap:6px; max-width:950px; width:100%; }
+    .game-wrapper {
+      background:linear-gradient(145deg, #1e2e4f 0%, #0c1a2c 100%);
+      border-radius:28px;
+      padding:10px;
+      box-shadow:0 20px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(100,150,255,0.2);
+      position:relative;
+      width:100%;
+    }
+    canvas {
+      display:block;
+      margin:0 auto;
+      border-radius:20px;
+      box-shadow:0 0 30px rgba(61,110,140,0.5);
+      background:#1a2e3c;
+      width:100%;
+      height:auto;
+      max-width:900px;
+      aspect-ratio:16/10;
+    }
+    .hud-top, .ui-bar {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      backdrop-filter:blur(10px);
+    }
+    .hud-top {
+      padding:8px 16px;
+      background:rgba(0,0,0,0.8);
+      border-radius:20px;
+      color:white;
+      font-size:0.75rem;
+      margin-bottom:6px;
+      border:1px solid rgba(100,150,255,0.3);
+    }
+    .ui-bar {
+      padding:8px 14px;
+      background:rgba(10,20,35,0.9);
+      border-radius:25px;
+      margin-top:8px;
+      color:#e6f7ff;
+      font-size:0.7rem;
+      border:1px solid rgba(80,160,255,0.4);
+    }
+    button {
+      background:linear-gradient(180deg, #3d6e8c 0%, #1b4057 100%);
+      border:none;
+      color:white;
+      padding:7px 14px;
+      border-radius:20px;
+      font-weight:bold;
+      cursor:pointer;
+      box-shadow:0 3px 0 #0f1e2e, 0 5px 10px rgba(0,0,0,0.5);
+      font-size:0.65rem;
+      border-bottom:2px solid #7fc9ff;
+      white-space:nowrap;
+      transition:all 0.1s;
+    }
+    button:hover { transform:translateY(-2px); }
+    button:active { transform:translateY(2px); }
+    .modal {
+      position:fixed;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      background:linear-gradient(160deg, var(--panel), var(--panel2));
+      border:3px solid var(--accent);
+      border-radius:20px;
+      padding:18px;
+      color:white;
+      z-index:200;
+      min-width:340px;
+      max-width:650px;
+      max-height:85vh;
+      overflow-y:auto;
+      display:none;
+      box-shadow:0 20px 40px black;
+    }
+    .modal.active { display:block; animation:fadeIn 0.3s; }
+    @keyframes fadeIn { from{opacity:0; transform:translate(-50%,-48%);} to{opacity:1; transform:translate(-50%,-50%);} }
+
+    .qte-bar-container {
+      position:fixed;
+      bottom:80px;
+      left:50%;
+      transform:translateX(-50%);
+      display:none;
+      width:500px;
+      height:50px;
+      background:rgba(0,0,0,0.9);
+      border-radius:25px;
+      z-index:150;
+      border:3px solid var(--danger);
+      overflow:hidden;
+    }
+    .qte-bar-container.active { display:block; }
+    .qte-bar-bg { position:absolute; inset:0; background:rgba(255,0,0,0.1); }
+    .qte-bar-fill { height:100%; background:#ff3333; transition:width 0.05s; position:relative; z-index:1; }
+    .qte-marker { position:absolute; top:-5px; width:8px; height:60px; background:white; box-shadow:0 0 20px white, 0 0 40px #ff4444; border-radius:4px; z-index:2; transition:left 0.05s; }
+    .qte-target-zone { position:absolute; top:0; height:100%; background:rgba(255,68,68,0.5); border-left:3px solid #ff6666; border-right:3px solid #ff6666; z-index:1; }
+
+    .boss-healthbar {
+      position:fixed;
+      top:20px;
+      left:50%;
+      transform:translateX(-50%);
+      width:400px;
+      height:30px;
+      background:#1a1a1a;
+      border:3px solid var(--danger);
+      border-radius:12px;
+      display:none;
+      z-index:250;
+    }
+    .boss-healthbar.active { display:block; }
+    .boss-fill { height:100%; background:var(--danger); border-radius:8px; transition:width 0.3s; }
+
+    .catch-card {
+      position:fixed;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%) scale(0);
+      background:linear-gradient(160deg, var(--panel), var(--panel2));
+      border:3px solid gold;
+      border-radius:20px;
+      padding:22px;
+      color:white;
+      z-index:300;
+      text-align:center;
+      min-width:300px;
+      box-shadow:0 0 40px rgba(255,215,0,0.5);
+      transition:transform 0.3s cubic-bezier(0.68,-0.55,0.27,1.55);
+    }
+    .catch-card.show { transform:translate(-50%,-50%) scale(1); }
+
+    .drop-rate-table { width:100%; font-size:0.6rem; border-collapse:collapse; margin:8px 0; }
+    .drop-rate-table td, .drop-rate-table th { padding:4px 8px; border:1px solid #3d6e8c; text-align:left; }
+    .drop-rate-table th { background:#1a3a4a; color:#ffd966; }
+
+    .small { font-size:0.7rem; color:#b6d9f0; }
+    .hidden { display:none !important; }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <div class="hud-top">
+    <span id="weatherHud">☀️ Clear</span>
+    <span id="timeHud">🕐 12:00</span>
+    <span id="eventHud">🎣 Normal</span>
+    <span id="pearlHud">💎 <span id="pearlCount">0</span>/6 Shards</span>
+    <span id="eldritchHud">👁️ 0/5 Eldritch</span>
+    <span id="saveHud">💾 Saved</span>
+  </div>
+
+  <div class="game-wrapper">
+    <canvas id="gameCanvas" width="900" height="560"></canvas>
+    <div class="ui-bar">
+      <span>🎣 <span id="playerName">Angler</span></span>
+      <span>🐟 <span id="fishCount">0</span></span>
+      <span>💰 <span id="goldDisplay">150</span></span>
+      <span>🚤 <span id="boatStatus">No Boat</span></span>
+      <button id="inventoryBtn">🎒 Inv (I)</button>
+      <button id="ratesBtn">📊 Rates</button>
+      <button id="questBtn">📜 Quests</button>
+      <button id="fishBioBtn">📖 Bio (F)</button>
+      <button id="shopBtn">🏪 Jimmy</button>
+      <button id="settingsBtn">⚙️ Settings</button>
+    </div>
+  </div>
+
+  <div class="small">🖱️ Click water to cast · SPACE = hook / enter ocean · I:Inventory · Q:Quests · F:Bio · S:Save</div>
+</div>
+
+<div id="ratesModal" class="modal">
+  <span onclick="document.getElementById('ratesModal').classList.remove('active')" style="float:right;cursor:pointer;font-size:1.5rem;">✖</span>
+  <h3>📊 Complete Drop Rates</h3>
+  <h4 style="color:#ffd966;margin-top:10px;">🐟 Fish Spawn Rates</h4>
+  <table class="drop-rate-table">
+    <tr><th>Rarity</th><th>Base Rate</th><th>With ⭐ Spot (1.5x)</th><th>With ⭐⭐ Spot (3x)</th></tr>
+    <tr><td style="color:#a0b8c0;">Common</td><td>45.0%</td><td>67.5%</td><td>100%</td></tr>
+    <tr><td style="color:#7c9c4a;">Uncommon</td><td>25.0%</td><td>37.5%</td><td>75.0%</td></tr>
+    <tr><td style="color:#e86f8a;">Rare</td><td>15.0%</td><td>22.5%</td><td>45.0%</td></tr>
+    <tr><td style="color:#c9a0ff;">Epic</td><td>8.0%</td><td>12.0%</td><td>24.0%</td></tr>
+    <tr><td style="color:#ff8c00;">Legendary</td><td>3.5%</td><td>5.25%</td><td>10.5%</td></tr>
+    <tr><td style="color:#ff44aa;">Mythical</td><td>1.8%</td><td>2.7%</td><td>5.4%</td></tr>
+    <tr><td style="color:#40e0d0;">Tale Fish</td><td>0.5%</td><td>0.75%</td><td>1.5%</td></tr>
+    <tr><td style="color:#2d5a27;">Eldritch</td><td>0.15%</td><td>0.23%</td><td>0.45%</td></tr>
+    <tr><td style="color:#ff0000;">World Boss</td><td>0.05%</td><td>0.075%</td><td>0.15%</td></tr>
+    <tr><td style="color:#4a90d9;">Mythical Tale</td><td>0.02%</td><td>Need Pearl</td><td>Need Pearl</td></tr>
+  </table>
+
+  <h4 style="color:#ffd966;margin-top:10px;">🧬 Mutation Rates (Per Catch)</h4>
+  <table class="drop-rate-table">
+    <tr><th>Mutation</th><th>Chance</th><th>Effect</th></tr>
+    <tr><td style="color:#ff6600;">Alpha</td><td>8.0%</td><td>1.8x weight, 1.5x value</td></tr>
+    <tr><td style="color:#1a1a1a;">Melanistic</td><td>5.0%</td><td>2.2x value</td></tr>
+    <tr><td style="color:#ffffff;">Piebald</td><td>3.0%</td><td>2.8x value</td></tr>
+    <tr><td style="color:#ffcccc;">Albino</td><td>0.5%</td><td>3.5x value (Ultra Rare)</td></tr>
+    <tr><td style="color:#ff8c00;">Giant</td><td>4.0%</td><td>2.5x weight, 3x value</td></tr>
+    <tr><td style="color:#ff00ff;">Fluorescent</td><td>6.0%</td><td>2.5x value</td></tr>
+    <tr><td style="color:#00ff00;">Radioactive</td><td>7.0%</td><td>0.8x weight, 1.5x value</td></tr>
+  </table>
+
+  <h4 style="color:#ffd966;margin-top:10px;">💎 Pearl Shard Drop</h4>
+  <table class="drop-rate-table">
+    <tr><th>Location</th><th>Base Rate</th><th>With ⭐⭐ Spot</th></tr>
+    <tr><td>Lake/River</td><td>0% (ocean only)</td><td>N/A</td></tr>
+    <tr><td>Ocean (normal spot)</td><td>1.0%</td><td>3.0%</td></tr>
+    <tr><td>Ocean (⭐ Star spot)</td><td>1.5%</td><td>4.5%</td></tr>
+  </table>
+
+  <h4 style="color:#ffd966;margin-top:10px;">⚡ Boss Fight Spawn</h4>
+  <table class="drop-rate-table">
+    <tr><th>Condition</th><th>Rate</th></tr>
+    <tr><td>While in Ocean</td><td>0.1% per game tick (~6% per minute)</td></tr>
+    <tr><td>Boss Duration</td><td>45 seconds</td></tr>
+    <tr><td>Weather During Boss</td><td>Always Storm ⛈️</td></tr>
+    <tr><td>Boss Fish Rate</td><td>5% during event (vs 0.05% normal)</td></tr>
+  </table>
+
+  <h4 style="color:#ffd966;margin-top:10px;">⭐ Fishing Spot Bonuses</h4>
+  <table class="drop-rate-table">
+    <tr><th>Spot</th><th>Drop Bonus</th></tr>
+    <tr><td>Misty Lake</td><td>1.0x (Normal)</td></tr>
+    <tr><td>Silver River</td><td>1.5x ⭐</td></tr>
+    <tr><td>Deep Ocean</td><td>2.0x ⭐⭐</td></tr>
+    <tr><td>Ocean Zones (Random)</td><td>1.0x - 3.0x</td></tr>
+  </table>
+</div>
+
+<div id="inventoryModal" class="modal">
+  <span onclick="document.getElementById('inventoryModal').classList.remove('active')" style="float:right;cursor:pointer;font-size:1.5rem;">✖</span>
+  <h3>🎒 Inventory</h3>
+  <p style="font-size:0.7rem;">
+    Gold: <span id="invGold">150</span>💰 |
+    Pearls: <span id="invPearls">0</span>/6 💎 |
+    Perfect Pearl: <span id="invPearlStatus">❌</span>
+  </p>
+  <div style="display:flex; gap:6px; flex-wrap:wrap; margin:8px 0;">
+    <button id="sortInvBtn">↕ Sort</button>
+    <button id="sellDupesBtn">💰 Sell Dupes</button>
+    <button id="sellRareBtn">⭐ Sell Rare+</button>
+  </div>
+  <div id="inventoryList" style="max-height:300px;overflow-y:auto;"></div>
+</div>
+
+<div id="questModal" class="modal">
+  <span onclick="document.getElementById('questModal').classList.remove('active')" style="float:right;cursor:pointer;font-size:1.5rem;">✖</span>
+  <h3>📜 Quest Journal</h3>
+  <div id="availableQuests"></div>
+  <h4 style="color:#ffd966;margin-top:12px;">Active Quests:</h4>
+  <div id="activeQuests"></div>
+</div>
+
+<div id="fishBioModal" class="modal">
+  <span onclick="document.getElementById('fishBioModal').classList.remove('active')" style="float:right;cursor:pointer;font-size:1.5rem;">✖</span>
+  <h3>🐠 FishBio · <span id="bioCount">0</span>/22</h3>
+  <input id="bioSearch" placeholder="Search fish..." style="width:100%;margin:8px 0;padding:8px;border-radius:8px;border:none;background:#0b1320;color:white;">
+  <div id="bioGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0;max-height:350px;overflow-y:auto;"></div>
+  <div id="mutationGuide" style="margin-top:10px;border-top:1px solid #5b9bb5;padding-top:8px;">
+    <h4 style="color:#ffd966;">🧬 Mutation Guide</h4>
+    <div id="mutationList"></div>
+  </div>
+</div>
+
+<div id="shopModal" class="modal">
+  <span onclick="document.getElementById('shopModal').classList.remove('active')" style="float:right;cursor:pointer;font-size:1.5rem;">✖</span>
+  <h3>🏪 Fishin Jimmy's Shop</h3>
+  <p id="jimmyDialogue" style="color:#ffd966;">"Welcome, partner!"</p>
+  <div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap;">
+    <button id="sellAllBtn">💰 Sell All Fish</button>
+    <button id="buyBoatBtn">🚤 Buy Boat (1000💰)</button>
+    <button id="craftPearlBtn" style="display:none;">💎 Craft Perfect Pearl</button>
+    <button id="saveBtn">💾 Save</button>
+    <button id="loadBtn">📂 Load</button>
+  </div>
+</div>
+
+<div id="settingsModal" class="modal">
+  <span onclick="document.getElementById('settingsModal').classList.remove('active')" style="float:right;cursor:pointer;font-size:1.5rem;">✖</span>
+  <h3>⚙️ Settings</h3>
+  <label><input type="checkbox" id="reduceMotionToggle"> Reduced motion</label><br><br>
+  <label><input type="checkbox" id="highContrastToggle"> High contrast</label><br><br>
+  <label><input type="checkbox" id="autoSaveToggle" checked> Autosave</label><br><br>
+  <label><input type="checkbox" id="showTipsToggle" checked> Show tips</label><br><br>
+  <button id="exportSaveBtn">📤 Export Save</button>
+  <button id="importSaveBtn">📥 Import Save</button>
+</div>
+
+<div class="qte-bar-container" id="qteBarContainer">
+  <div class="qte-bar-bg"></div>
+  <div class="qte-target-zone" id="qteTargetZone"></div>
+  <div class="qte-marker" id="qteMarker"></div>
+  <div class="qte-bar-fill" id="qteBarFill"></div>
+</div>
+
+<div class="boss-healthbar" id="bossBar">
+  <div class="boss-fill" id="bossFill" style="width:100%"></div>
+</div>
+
+<div class="catch-card" id="catchCard">
+  <div id="catchEmoji" style="font-size:3rem;">🐟</div>
+  <h2 id="catchName">Fish</h2>
+  <div id="catchRarity" style="color:#ffd966;">Common</div>
+  <div id="catchChance" style="font-size:0.7rem;color:#aaccdd;"></div>
+  <div id="catchWeight">0.0 lbs</div>
+  <div id="catchMutation" style="color:#ffaa00;"></div>
+  <div id="catchValue">💰 0</div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  if (!(canvas instanceof HTMLCanvasElement)) throw new Error('Canvas missing');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('2D context missing');
+
+  const $ = (id) => {
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`${id} missing`);
+    return el;
+  };
+
+  const ui = {
+    playerName: $('playerName'),
+    fishCount: $('fishCount'),
+    goldDisplay: $('goldDisplay'),
+    boatStatus: $('boatStatus'),
+    pearlCount: $('pearlCount'),
+    eldritchHud: $('eldritchHud'),
+    weatherHud: $('weatherHud'),
+    timeHud: $('timeHud'),
+    eventHud: $('eventHud'),
+    saveHud: $('saveHud'),
+    invGold: $('invGold'),
+    invPearls: $('invPearls'),
+    invPearlStatus: $('invPearlStatus'),
+    inventoryList: $('inventoryList'),
+    availableQuests: $('availableQuests'),
+    activeQuests: $('activeQuests'),
+    bioGrid: $('bioGrid'),
+    bioCount: $('bioCount'),
+    mutationList: $('mutationList'),
+    qteTargetZone: $('qteTargetZone'),
+    qteMarker: $('qteMarker'),
+    qteBarFill: $('qteBarFill'),
+    qteBarContainer: $('qteBarContainer'),
+    bossBar: $('bossBar'),
+    bossFill: $('bossFill'),
+    catchCard: $('catchCard'),
+    catchEmoji: $('catchEmoji'),
+    catchName: $('catchName'),
+    catchRarity: $('catchRarity'),
+    catchChance: $('catchChance'),
+    catchWeight: $('catchWeight'),
+    catchMutation: $('catchMutation'),
+    catchValue: $('catchValue'),
+    jimmyDialogue: $('jimmyDialogue'),
+    craftPearlBtn: $('craftPearlBtn'),
+    reduceMotionToggle: $('reduceMotionToggle'),
+    highContrastToggle: $('highContrastToggle'),
+    autoSaveToggle: $('autoSaveToggle'),
+    showTipsToggle: $('showTipsToggle'),
+    bioSearch: $('bioSearch')
+  };
+
+  const STORAGE_KEY = 'mythicWatersSave_v1';
+
+  const mutations = [
+    {name:'Alpha',color:'#ff6600',weightMult:1.8,valueMult:1.5,chance:0.08,desc:'Larger & heavier'},
+    {name:'Melanistic',color:'#1a1a1a',weightMult:1.0,valueMult:2.2,chance:0.05,desc:'Dark pigmentation'},
+    {name:'Piebald',color:'#ffffff',weightMult:1.0,valueMult:2.8,chance:0.03,desc:'White patches'},
+    {name:'Albino',color:'#ffcccc',weightMult:0.9,valueMult:3.5,chance:0.005,desc:'No pigment, ultra rare'},
+    {name:'Giant',color:'#ff8c00',weightMult:2.5,valueMult:3.0,chance:0.04,desc:'Massive size'},
+    {name:'Fluorescent',color:'#ff00ff',weightMult:1.0,valueMult:2.5,chance:0.06,desc:'Bioluminescent'},
+    {name:'Radioactive',color:'#00ff00',weightMult:0.8,valueMult:1.5,chance:0.07,desc:'Slightly smaller'},
+  ];
+
+  const rarityChances = {
+    Common:45, Uncommon:25, Rare:15, Epic:8, Legendary:3.5, Mythical:1.8,
+    'Tale Fish':0.5, Eldritch:0.15, 'World Boss':0.05, 'Mythical Tale':0.02
+  };
+
+  const fishDB = [
+    {id:'bluegill',name:'Bluegill',rarity:'Common',weight:1.5,value:10,emoji:'🐟',color:'#a0b8c0',qte:'simple'},
+    {id:'bass',name:'Largemouth Bass',rarity:'Uncommon',weight:3.2,value:28,emoji:'🐠',color:'#7c9c4a',qte:'simple'},
+    {id:'catfish',name:'Channel Catfish',rarity:'Common',weight:4.1,value:15,emoji:'🐡',color:'#8b7355',qte:'simple'},
+    {id:'sunfish',name:'Ocean Sunfish',rarity:'Uncommon',weight:8.2,value:35,emoji:'🌞',color:'#ffd700',qte:'simple'},
+    {id:'pike',name:'Northern Pike',rarity:'Uncommon',weight:6.7,value:40,emoji:'🐊',color:'#556b2f',qte:'simple'},
+    {id:'trout',name:'Rainbow Trout',rarity:'Rare',weight:5.8,value:65,emoji:'🐟',color:'#e86f8a',qte:'easy'},
+    {id:'salmon',name:'King Salmon',rarity:'Rare',weight:12.3,value:80,emoji:'🐠',color:'#ff6347',qte:'easy'},
+    {id:'carp',name:'Golden Carp',rarity:'Rare',weight:9.4,value:70,emoji:'✨',color:'#ffd700',qte:'easy'},
+    {id:'marlin',name:'Blue Marlin',rarity:'Epic',weight:35.0,value:200,emoji:'🐋',color:'#4169e1',qte:'medium'},
+    {id:'glimmerfin',name:'Glimmerfin',rarity:'Epic',weight:18.5,value:150,emoji:'🦑',color:'#c9a0ff',qte:'medium',weather:'aurora'},
+    {id:'angler',name:'Anglerfish',rarity:'Epic',weight:22.0,value:180,emoji:'👾',color:'#2f4f4f',qte:'medium',time:'night'},
+    {id:'stormwhale',name:'Storm Whale',rarity:'Legendary',weight:55.0,value:500,emoji:'🐳',color:'#4a6fa5',qte:'hard',weather:'storm'},
+    {id:'moonserpent',name:'Moon Serpent',rarity:'Mythical',weight:85.0,value:900,emoji:'🐉',color:'#f0e68c',qte:'hard',time:'night'},
+    {id:'tidewraith',name:'Tide Wraith',rarity:'Tale Fish',weight:130.0,value:2000,emoji:'👻',color:'#40e0d0',qte:'extreme',weather:'fog',time:'night'},
+    {id:'cthulhu',name:'Cthulhu',rarity:'Eldritch',weight:200,value:5000,emoji:'🐙',color:'#2d5a27',qte:'extreme',eldritch:true},
+    {id:'dagon',name:'Dagon',rarity:'Eldritch',weight:250,value:5500,emoji:'🦈',color:'#1a3a4a',qte:'extreme',eldritch:true},
+    {id:'whisperingmaw',name:'Whispering Maw',rarity:'Eldritch',weight:180,value:4500,emoji:'👁️',color:'#4a1a4a',qte:'extreme',eldritch:true},
+    {id:'stareater',name:'Star-Eater',rarity:'Eldritch',weight:220,value:4800,emoji:'⭐',color:'#1a1a3a',qte:'extreme',eldritch:true},
+    {id:'voidkraken',name:'Void Kraken',rarity:'Eldritch',weight:190,value:5200,emoji:'🦑',color:'#0a0a2a',qte:'extreme',eldritch:true},
+    {id:'leviathan',name:'Leviathan',rarity:'World Boss',weight:500,value:10000,emoji:'🐉',color:'#ff0000',qte:'boss',boss:true},
+    {id:'poseidonguard',name:"Poseidon's Guard",rarity:'Mythical Tale',weight:350,value:15000,emoji:'🔱',color:'#4a90d9',qte:'extreme',requiresPearl:true},
+    {id:'goldenminnow',name:'Golden Minnow',rarity:'Common',weight:0.4,value:5,emoji:'🪙',color:'#ffd966',qte:'simple'}
+  ];
+
+  const quests = [
+    { id:'firstCatch', name:'First Catch', desc:'Catch your first fish!', type:'catch_any', amount:1, reward:50, progress:0, completed:false, active:false },
+    { id:'pearlCollector', name:'Pearl Collector', desc:'Collect 6 Pearl Shards from ocean fish', type:'pearls', amount:6, reward:500, progress:0, completed:false, active:false },
+    { id:'eldritchHunter', name:'Eldritch Hunter', desc:'Catch an Eldritch horror', type:'eldritch', amount:1, reward:2000, progress:0, completed:false, active:false },
+    { id:'lovecraft', name:"Lovecraft's Legacy", desc:'Catch all 5 Eldritch entities', type:'eldritch', amount:5, reward:10000, progress:0, completed:false, active:false },
+  ];
+
+  const waterZones = [
+    { x:180, y:350, r:55, type:'lake', name:'Misty Lake', dropBonus:1.0 },
+    { x:700, y:420, r:60, type:'river', name:'Silver River', dropBonus:1.5 },
+    { x:750, y:140, r:65, type:'ocean', name:'Deep Ocean', dropBonus:2.0 },
+  ];
+
+  const player = {
+    x:400, y:350, speed:2.8, name:'Angler'+Math.floor(Math.random()*1000),
+    gold:150, fishCaught:0, inventory:[], discovered:new Set(),
+    mutationRecords:{}, bestWeights:{},
+    boatOwned:false, inOcean:false,
+    isCasting:false, castTarget:null, castTimer:0,
+    fishOnLine:null, waitingForBite:false, biteTimer:0,
+    pearlShards:0, perfectPearl:false,
+    eldritchCaught:0, lovecraftedAchievement:false,
+    bossFight:null,
+    inventorySort:'rarity'
+  };
+
+  const settings = {
+    reduceMotion:false,
+    highContrast:false,
+    autoSave:true,
+    showTips:true
+  };
+
+  let oceanZones = [];
+  let dayTime = 0.5, weather = 'clear', weatherTimer = 0;
+  let particles = [], floatingTexts = [], screenShake = 0, glitchActive = false;
+  let qteActive = false, qteMarkerPos = 50, qteMarkerSpeed = 1.5, qteMarkerDir = 1;
+  let qteProgress = 50, qteGreenStart = 35, qteGreenEnd = 65, qteFish = null;
+  let bossEvent = null, bossEventTimer = 0;
+  const keys = {};
+
+  function loadSave() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const s = JSON.parse(raw);
+      Object.assign(player, s.player || {});
+      player.discovered = new Set(s.player?.discovered || []);
+      player.inventory = s.player?.inventory || [];
+      player.mutationRecords = s.player?.mutationRecords || {};
+      player.bestWeights = s.player?.bestWeights || {};
+      Object.assign(settings, s.settings || {});
+      dayTime = s.dayTime ?? dayTime;
+      weather = s.weather ?? weather;
+      weatherTimer = s.weatherTimer ?? weatherTimer;
+      bossEvent = s.bossEvent ?? bossEvent;
+      bossEventTimer = s.bossEventTimer ?? bossEventTimer;
+    } catch {}
+  }
+
+  function saveGame() {
+    const data = {
+      player: {
+        ...player,
+        discovered: [...player.discovered]
+      },
+      settings,
+      dayTime,
+      weather,
+      weatherTimer,
+      bossEvent,
+      bossEventTimer
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    ui.saveHud.textContent = '💾 Saved';
+    setTimeout(() => ui.saveHud.textContent = '💾 Auto/Manual Save', 1200);
+  }
+
+  function updateUI() {
+    ui.playerName.textContent = player.name.substring(0,10);
+    ui.fishCount.textContent = player.fishCaught;
+    ui.goldDisplay.textContent = player.gold;
+    ui.boatStatus.textContent = player.boatOwned ? '⛵ Boat' : '❌ No Boat';
+    ui.pearlCount.textContent = player.pearlShards;
+    ui.eldritchHud.textContent = `👁️ ${player.eldritchCaught}/5 Eldritch`;
+
+    const wEmoji = {clear:'☀️',rain:'🌧️',fog:'🌫️',storm:'⛈️',aurora:'🌌'};
+    ui.weatherHud.textContent = `${wEmoji[weather] || '☀️'} ${weather}`;
+    ui.timeHud.textContent = `🕐 ${String(Math.floor(dayTime*24)).padStart(2,'0')}:00`;
+    ui.eventHud.textContent = bossEvent ? `⚡ BOSS! ${bossEvent.name}` : weather !== 'clear' ? `${weather} active` : '🎣 Normal';
+
+    ui.craftPearlBtn.style.display = (player.pearlShards >= 6 && !player.perfectPearl) ? 'inline-block' : 'none';
+
+    document.body.style.filter = settings.highContrast ? 'contrast(1.25) saturate(1.1)' : '';
+  }
+
+  function updateInventoryDisplay() {
+    ui.invGold.textContent = player.gold;
+    ui.invPearls.textContent = player.pearlShards;
+    ui.invPearlStatus.textContent = player.perfectPearl ? '✅ Yes' : '❌ No';
+
+    const items = [...player.inventory];
+    if (player.inventorySort === 'rarity') {
+      items.sort((a,b) => (rarityChances[b.fish.rarity] || 0) - (rarityChances[a.fish.rarity] || 0));
+    } else if (player.inventorySort === 'value') {
+      items.sort((a,b) => (b.fish.value * (b.mutation?.valueMult || 1)) - (a.fish.value * (a.mutation?.valueMult || 1)));
+    } else if (player.inventorySort === 'weight') {
+      items.sort((a,b) => parseFloat(b.weight) - parseFloat(a.weight));
+    }
+
+    if (items.length === 0) {
+      ui.inventoryList.innerHTML = '<p style="color:#888;font-size:0.7rem;">No fish in inventory. Go fishing!</p>';
+      return;
+    }
+
+    ui.inventoryList.innerHTML = items.map(item => {
+      const fish = item.fish;
+      const value = Math.floor(fish.value * (item.mutation?.valueMult || 1));
+      return `<div style="background:#162f3b;padding:6px 10px;border-radius:8px;margin:3px 0;font-size:0.65rem;display:flex;justify-content:space-between;gap:8px;">
+        <span>${fish.emoji} ${fish.name} <span style="color:${fish.color};">${fish.rarity}</span></span>
+        <span>${item.weight}lbs ${item.mutation ? '🧬 '+item.mutation.name : ''} 💰${value}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderQuestJournal() {
+    ui.availableQuests.innerHTML = '<h4 style="color:#7fc9ff;">Available Quests:</h4>';
+    ui.activeQuests.innerHTML = '';
+    quests.forEach(q => {
+      if (!q.active && !q.completed) {
+        ui.availableQuests.innerHTML += `<div style="padding:8px;margin:4px 0;background:#162f3b;border-radius:8px;border-left:3px solid #5b9bb5;">
+          📋 <strong>${q.name}</strong> - ${q.desc}<br><small>Reward: ${q.reward}💰</small>
+          <button onclick="window.acceptQuest('${q.id}')" style="float:right;font-size:0.6rem;">Accept</button></div>`;
+      }
+      if (q.active) {
+        ui.activeQuests.innerHTML += `<div style="padding:8px;margin:4px 0;background:#162f3b;border-radius:8px;border-left:3px solid ${q.completed ? '#4caf92' : '#ffd700'};">
+          ${q.completed ? '✅' : '⏳'} <strong>${q.name}</strong>: ${q.progress}/${q.amount}</div>`;
+      }
+    });
+  }
+
+  window.acceptQuest = (id) => {
+    const q = quests.find(x => x.id === id);
+    if (q && !q.active && !q.completed) {
+      q.active = true;
+      floatingTexts.push({text:`📜 ${q.name} accepted!`,x:player.x,y:player.y-20,life:50,color:'#7fc9ff'});
+      renderQuestJournal();
+    }
+  };
+
+  function openFishBio() {
+    const term = ui.bioSearch.value.trim().toLowerCase();
+    ui.bioGrid.innerHTML = '';
+    fishDB.filter(f => !term || f.name.toLowerCase().includes(term) || f.rarity.toLowerCase().includes(term)).forEach(f => {
+      const d = player.discovered.has(f.id);
+      const chance = rarityChances[f.rarity] || 0;
+      const div = document.createElement('div');
+      div.style.cssText = `background:#162f3b;padding:6px;border-radius:8px;font-size:0.6rem;border-left:3px solid ${d ? f.color : '#555'};opacity:${d ? 1 : 0.5};`;
+      div.innerHTML = `<strong>${d ? f.emoji+' '+f.name : '???'}</strong><br>${f.rarity} <span style="color:#aaccdd;">${chance}%</span> · ${f.weight}lbs`;
+      if (d && player.mutationRecords[f.id]) div.innerHTML += `<br><small style="color:#ffd966;">🧬 ${player.mutationRecords[f.id].join(', ')}</small>`;
+      ui.bioGrid.appendChild(div);
+    });
+    ui.bioCount.textContent = player.discovered.size;
+    ui.mutationList.innerHTML = mutations.map(m =>
+      `<div style="background:#0d1a2e;padding:4px 8px;border-radius:6px;margin:2px 0;font-size:0.55rem;border-left:2px solid ${m.color};">
+        <span style="color:${m.color};">●</span> <strong>${m.name}</strong>: ${m.desc} (${(m.chance*100).toFixed(1)}%)
+      </div>`
+    ).join('');
+    $('fishBioModal').classList.add('active');
+  }
+
+  function showCatchCard(fish, weight, mutation) {
+    ui.catchEmoji.textContent = fish.emoji;
+    ui.catchName.textContent = fish.name;
+    ui.catchRarity.textContent = `${fish.rarity} · ${(rarityChances[fish.rarity] || 0)}%`;
+    ui.catchRarity.style.color = fish.color;
+    ui.catchChance.textContent = `Spawn rate: ${(rarityChances[fish.rarity] || 0)}%`;
+    ui.catchWeight.textContent = `${weight} lbs`;
+    ui.catchMutation.textContent = mutation ? `🧬 ${mutation.name}` : '';
+    ui.catchMutation.style.color = mutation ? mutation.color : '#ffaa00';
+    ui.catchValue.textContent = `💰 ${Math.floor(fish.value * (mutation?.valueMult || 1))}`;
+    ui.catchCard.classList.add('show');
+    setTimeout(() => ui.catchCard.classList.remove('show'), 2200);
+  }
+
+  function spawnParticles(x, y, count, color) {
+    if (settings.reduceMotion) return;
+    for (let i = 0; i < count; i++) particles.push({x,y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4-3,life:1,color,size:2+Math.random()*4});
+  }
+
+  function generateOcean() {
+    oceanZones = [];
+    for (let i = 0; i < 25; i++) oceanZones.push({x:100+Math.random()*700,y:50+Math.random()*450,r:30+Math.random()*30,type:'ocean',name:`Ocean ${i+1}`,dropBonus:1.0+Math.random()*2.0});
+  }
+
+  function selectFish(spot) {
+    const dropBonus = spot.dropBonus || 1.0;
+    let available = fishDB.filter(f => {
+      if (f.boss && !bossEvent) return false;
+      if (f.requiresPearl && !player.perfectPearl) return false;
+      if (f.weather && weather !== f.weather) return false;
+      if (f.time === 'night' && dayTime > 0.25 && dayTime < 0.75) return false;
+      if (f.eldritch && !player.inOcean) return false;
+      return true;
+    });
+    if (!available.length) available = fishDB.filter(f => !f.boss && !f.requiresPearl && !f.eldritch);
+
+    const weighted = available.map(f => ({ f, w: (rarityChances[f.rarity] || 1) * dropBonus }));
+    let total = weighted.reduce((s, i) => s + i.w, 0);
+    let r = Math.random() * total;
+    for (const i of weighted) {
+      r -= i.w;
+      if (r <= 0) return i.f;
+    }
+    return available[0];
+  }
+
+  function castLine(tx, ty) {
+    if (player.waitingForBite || player.fishOnLine || qteActive || player.bossFight) return;
+    const zones = player.inOcean ? oceanZones : waterZones;
+    const spot = zones.find(z => Math.hypot(tx - z.x, ty - z.y) < z.r);
+    if (!spot) return;
+    player.isCasting = true;
+    player.castTarget = { x: tx, y: ty, spot };
+    player.castTimer = 0;
+    floatingTexts.push({text:'🎣 Cast!',x:player.x,y:player.y-15,life:30,color:'#ffffff'});
+  }
+
+  function startWaitingForBite(spot) {
+    player.waitingForBite = true;
+    player.biteTimer = 40 + Math.random() * 100;
+    player.fishOnLine = selectFish(spot);
+  }
+
+  function fishBites() {
+    player.waitingForBite = false;
+    const fish = player.fishOnLine;
+    if (!fish) return;
+    floatingTexts.push({text:'❗ BITE!',x:player.castTarget?.x || player.x,y:player.castTarget?.y || player.y-25,life:40,color:'#ff4444'});
+    screenShake = settings.reduceMotion ? 0 : 8;
+    if (fish.eldritch) glitchActive = true;
+    if (fish.qte === 'simple') startQTE(fish,55,0.7);
+    else if (fish.qte === 'easy') startQTE(fish,45,1.0);
+    else if (fish.qte === 'medium') startQTE(fish,30,1.5);
+    else if (fish.qte === 'hard') startQTE(fish,20,2.2);
+    else if (fish.qte === 'extreme') startQTE(fish,12,3.0);
+    else if (fish.qte === 'boss') startBossFight(fish);
+  }
+
+  function startQTE(fish, greenWidth, markerSpeed) {
+    qteActive = true;
+    qteFish = fish;
+    qteProgress = 50;
+    qteMarkerPos = 20 + Math.random() * 60;
+    qteMarkerDir = Math.random() > 0.5 ? 1 : -1;
+    qteMarkerSpeed = markerSpeed;
+    qteGreenStart = 50 - greenWidth / 2;
+    qteGreenEnd = 50 + greenWidth / 2;
+    ui.qteTargetZone.style.left = qteGreenStart + '%';
+    ui.qteTargetZone.style.width = greenWidth + '%';
+    ui.qteBarContainer.classList.add('active');
+    ui.qteBarFill.style.background = '#ff3333';
+    updateQTEDisplay();
+  }
+
+  function startBossFight(fish) {
+    qteActive = true;
+    qteFish = fish;
+    qteProgress = 50;
+    qteMarkerPos = 50;
+    qteMarkerDir = 1;
+    qteMarkerSpeed = 2.8;
+    qteGreenStart = 42;
+    qteGreenEnd = 58;
+    player.bossFight = { health: 100 };
+    ui.bossBar.classList.add('active');
+    ui.qteBarContainer.classList.add('active');
+    ui.qteBarFill.style.background = '#ff0000';
+    floatingTexts.push({text:`⚡ ${fish.name} EMERGES!`,x:450,y:280,life:80,color:'#ff0000'});
+    updateQTEDisplay();
+  }
+
+  function updateQTE() {
+    if (!qteActive) return;
+    qteMarkerPos += qteMarkerSpeed * qteMarkerDir;
+    if (qteMarkerPos >= 95) qteMarkerDir = -1;
+    if (qteMarkerPos <= 5) qteMarkerDir = 1;
+    qteProgress -= settings.reduceMotion ? 0.25 : 0.15;
+    if (qteProgress <= 0) failQTE();
+    updateQTEDisplay();
+  }
+
+  function updateQTEDisplay() {
+    ui.qteMarker.style.left = qteMarkerPos + '%';
+    ui.qteBarFill.style.width = qteProgress + '%';
+  }
+
+  function hookFish() {
+    if (!qteActive) return;
+    const inZone = qteMarkerPos >= qteGreenStart && qteMarkerPos <= qteGreenEnd;
+    if (inZone) {
+      qteProgress += 15;
+      floatingTexts.push({text:'✓',x:player.x,y:player.y-30,life:20,color:'#4caf92'});
+      if (player.bossFight) {
+        player.bossFight.health -= 15;
+        ui.bossFill.style.width = player.bossFight.health + '%';
+        if (player.bossFight.health <= 0) {
+          qteActive = false;
+          player.bossFight = null;
+          ui.bossBar.classList.remove('active');
+          ui.qteBarContainer.classList.remove('active');
+          catchFishSuccess(qteFish);
+          return;
+        }
+      }
+      if (qteProgress >= 100) {
+        qteActive = false;
+        ui.qteBarContainer.classList.remove('active');
+        if (player.bossFight) {
+          ui.bossBar.classList.remove('active');
+          player.bossFight = null;
+        }
+        catchFishSuccess(qteFish);
+      }
+    } else {
+      qteProgress -= 10;
+      floatingTexts.push({text:'✗',x:player.x,y:player.y-30,life:20,color:'#ff4444'});
+      if (qteProgress <= 0) failQTE();
+    }
+    updateQTEDisplay();
+  }
+
+  function failQTE() {
+    qteActive = false;
+    if (player.bossFight) {
+      ui.bossBar.classList.remove('active');
+      player.bossFight = null;
+    }
+    ui.qteBarContainer.classList.remove('active');
+    floatingTexts.push({text:'💨 Escaped!',x:player.x,y:player.y,life:40,color:'#ff4444'});
+    glitchActive = false;
+    player.fishOnLine = null;
+  }
+
+  function catchFishSuccess(fish) {
+    const baseWeight = fish.weight * (0.7 + Math.random() * 0.6);
+    let mutation = null;
+    for (const m of mutations) {
+      if (Math.random() < m.chance) { mutation = m; break; }
+    }
+    const finalWeight = (baseWeight * (mutation?.weightMult || 1)).toFixed(1);
+    const valueMult = mutation?.valueMult || 1;
+
+    player.fishCaught++;
+    player.gold += Math.floor(fish.value * valueMult);
+    player.discovered.add(fish.id);
+    if (fish.eldritch) {
+      player.eldritchCaught++;
+      if (player.eldritchCaught >= 5 && !player.lovecraftedAchievement) {
+        player.lovecraftedAchievement = true;
+        floatingTexts.push({text:'🏆 H.P. LOVECRAFTED!',x:player.x,y:player.y-30,life:100,color:'#ffd700'});
+      }
+    }
+    if (fish.id === 'poseidonguard') player.perfectPearl = false;
+    if (!player.mutationRecords[fish.id]) player.mutationRecords[fish.id] = [];
+    if (mutation && !player.mutationRecords[fish.id].includes(mutation.name)) player.mutationRecords[fish.id].push(mutation.name);
+    if (!player.bestWeights[fish.id] || parseFloat(finalWeight) > parseFloat(player.bestWeights[fish.id])) player.bestWeights[fish.id] = finalWeight;
+
+    const spotBonus = player.castTarget?.spot?.dropBonus || 1.0;
+    if (player.inOcean && Math.random() < 0.01 * spotBonus && player.pearlShards < 6 && !player.perfectPearl) {
+      player.pearlShards++;
+      floatingTexts.push({text:'💎 Pearl Shard!',x:player.x,y:player.y-20,life:60,color:'#ffd700'});
+    }
+
+    quests.forEach(q => {
+      if (!q.active || q.completed) return;
+      if (q.type === 'catch_any') q.progress = Math.min(q.amount, q.progress + 1);
+      else if (q.type === 'eldritch' && fish.eldritch) q.progress = Math.min(q.amount, q.progress + 1);
+      else if (q.type === 'pearls') q.progress = player.pearlShards;
+      if (q.progress >= q.amount && !q.completed) {
+        q.completed = true;
+        player.gold += q.reward;
+        floatingTexts.push({text:`✅ ${q.name}! +${q.reward}💰`,x:player.x,y:player.y-40,life:80,color:'#ffd700'});
+      }
+    });
+
+    player.inventory.push({fish,weight:finalWeight,mutation});
+    showCatchCard(fish, finalWeight, mutation);
+    spawnParticles(player.x, player.y, 25, fish.color);
+    if (fish.rarity === 'Eldritch' || fish.rarity === 'World Boss') screenShake = 25;
+    player.fishOnLine = null;
+    glitchActive = false;
+    updateUI();
+    updateInventoryDisplay();
+    renderQuestJournal();
+    maybeAutoSave();
+  }
+
+  function triggerBossEvent() {
+    if (bossEvent || !player.inOcean) return;
+    if (Math.random() < 0.001) {
+      const bosses = fishDB.filter(f => f.boss);
+      if (bosses.length > 0) {
+        bossEvent = bosses[Math.floor(Math.random() * bosses.length)];
+        weather = 'storm';
+        bossEventTimer = 2700;
+        floatingTexts.push({text:`⚡ ${bossEvent.name} SPAWNS! (45s)`,x:450,y:280,life:120,color:'#ff0000'});
+      }
+    }
+    if (bossEventTimer > 0) {
+      bossEventTimer--;
+      if (bossEventTimer <= 0) {
+        bossEvent = null;
+        if (weather === 'storm') weather = 'clear';
+      }
+    }
+  }
+
+  function maybeAutoSave() {
+    if (!settings.autoSave) return;
+    saveGame();
+  }
+
+  function sellAllFish() {
+    if (!player.inventory.length) {
+      floatingTexts.push({text:'No fish!',x:player.x,y:player.y-20,life:40,color:'#ff4444'});
+      return;
+    }
+    const total = player.inventory.reduce((s, i) => s + Math.floor(i.fish.value * (i.mutation?.valueMult || 1)), 0);
+    player.gold += total;
+    player.inventory = [];
+    updateUI();
+    updateInventoryDisplay();
+    floatingTexts.push({text:`💰 Sold for ${total}!`,x:player.x,y:player.y-20,life:50,color:'#ffd700'});
+    maybeAutoSave();
+  }
+
+  function buyBoat() {
+    if (player.boatOwned) {
+      floatingTexts.push({text:'Already owned!',x:player.x,y:player.y-20,life:40,color:'#ffaa00'});
+      return;
+    }
+    if (player.gold < 1000) {
+      floatingTexts.push({text:'Need 1000💰!',x:player.x,y:player.y-20,life:40,color:'#ff4444'});
+      return;
+    }
+    player.boatOwned = true;
+    player.gold -= 1000;
+    updateUI();
+    floatingTexts.push({text:'🚤 Boat!',x:player.x,y:player.y-20,life:50,color:'#ffd700'});
+    maybeAutoSave();
+  }
+
+  function craftPearl() {
+    if (player.pearlShards >= 6 && !player.perfectPearl) {
+      player.perfectPearl = true;
+      player.pearlShards = 0;
+      floatingTexts.push({text:'💎 Perfect Pearl!',x:player.x,y:player.y-20,life:60,color:'#ffd700'});
+      updateUI();
+      maybeAutoSave();
+    }
+  }
+
+  function sortInventory() {
+    const order = ['rarity','value','weight'];
+    player.inventorySort = order[(order.indexOf(player.inventorySort) + 1) % order.length];
+    updateInventoryDisplay();
+  }
+
+  function sellDuplicates() {
+    const map = new Map();
+    player.inventory.forEach((item, idx) => {
+      const key = item.fish.id + '|' + (item.mutation?.name || '');
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(idx);
+    });
+    const keep = new Set();
+    for (const arr of map.values()) if (arr.length) keep.add(arr[0]);
+    const sold = player.inventory.filter((_, idx) => !keep.has(idx));
+    const total = sold.reduce((s, i) => s + Math.floor(i.fish.value * (i.mutation?.valueMult || 1)), 0);
+    player.inventory = player.inventory.filter((_, idx) => keep.has(idx));
+    player.gold += total;
+    floatingTexts.push({text:`💰 Dupes sold ${total}!`,x:player.x,y:player.y-20,life:50,color:'#ffd700'});
+    updateInventoryDisplay();
+    updateUI();
+    maybeAutoSave();
+  }
+
+  function sellRarePlus() {
+    const keep = [];
+    let total = 0;
+    player.inventory.forEach(i => {
+      const isRare = (rarityChances[i.fish.rarity] || 0) <= 15;
+      if (isRare) total += Math.floor(i.fish.value * (i.mutation?.valueMult || 1));
+      else keep.push(i);
+    });
+    player.inventory = keep;
+    player.gold += total;
+    floatingTexts.push({text:`💰 Rare+ sold ${total}!`,x:player.x,y:player.y-20,life:50,color:'#ffd700'});
+    updateInventoryDisplay();
+    updateUI();
+    maybeAutoSave();
+  }
+
+  window.sellAllFish = sellAllFish;
+  window.buyBoat = buyBoat;
+  window.craftPearl = craftPearl;
+
+  function update() {
+    dayTime += 0.00025;
+    if (dayTime > 1) dayTime = 0;
+    weatherTimer++;
+    if (weatherTimer > 450) {
+      weather = ['clear','rain','fog','storm','aurora'][Math.floor(Math.random()*5)];
+      weatherTimer = 0;
+    }
+    if (player.waitingForBite) {
+      player.biteTimer--;
+      if (player.biteTimer <= 0) fishBites();
+    }
+    updateQTE();
+    triggerBossEvent();
+    updateUI();
+    if (settings.autoSave && Math.random() < 0.001) saveGame();
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,900,560);
+    let sx = 0, sy = 0;
+    if (screenShake > 0 && !settings.reduceMotion) {
+      sx = (Math.random() - 0.5) * screenShake;
+      sy = (Math.random() - 0.5) * screenShake;
+      screenShake *= 0.9;
+      if (screenShake < 0.1) screenShake = 0;
+    }
+    if (glitchActive && !settings.reduceMotion && Math.random() < 0.2) {
+      sx += Math.random() * 8 - 4;
+      sy += Math.random() * 8 - 4;
+    }
+
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    const night = Math.sin(dayTime * Math.PI);
+    ctx.fillStyle = `rgb(${10+night*20},${15+night*30},${30+night*50})`;
+    ctx.fillRect(0,0,900,560);
+
+    if (bossEvent) {
+      ctx.fillStyle = 'rgba(255,0,0,0.15)';
+      ctx.fillRect(0,0,900,560);
+    }
+
+    ctx.fillStyle = '#2a402a';
+    ctx.fillRect(0,310,900,250);
+
+    const zones = player.inOcean ? oceanZones : waterZones;
+    zones.forEach(z => {
+      const g = ctx.createRadialGradient(z.x,z.y,z.r*0.2,z.x,z.y,z.r);
+      g.addColorStop(0,'rgba(20,80,160,0.9)');
+      g.addColorStop(1,'rgba(8,40,90,0.7)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(z.x,z.y,z.r,0,Math.PI*2);
+      ctx.fill();
+      if ((z.dropBonus || 1) > 1.5) {
+        ctx.fillStyle = 'rgba(255,215,0,0.4)';
+        ctx.fillText('⭐',z.x-8,z.y-15);
+      }
+    });
+
+    ctx.fillStyle = '#f5e56c';
+    ctx.beginPath();
+    ctx.arc(500,460,14,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = 'black';
+    ctx.font = 'bold 9px monospace';
+    ctx.fillText('🐟 Jimmy',470,442);
+
+    const bob = settings.reduceMotion ? 0 : Math.sin(Date.now()*0.005)*2;
+    ctx.fillStyle = '#34c9eb';
+    ctx.beginPath();
+    ctx.arc(player.x,player.y+bob,12,0,Math.PI*2);
+    ctx.fill();
+
+    if (player.isCasting) {
+      player.castTimer++;
+      const p = Math.min(1,player.castTimer/25);
+      if (player.castTarget) {
+        const cx = player.x + (player.castTarget.x - player.x) * p;
+        const cy = player.y + (player.castTarget.y - player.y) * p - Math.sin(p*Math.PI)*35;
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(cx,cy,4,0,Math.PI*2);
+        ctx.fill();
+        if (p >= 1) {
+          player.isCasting = false;
+          startWaitingForBite(player.castTarget.spot);
+        }
+      }
+    }
+
+    if (player.waitingForBite && player.castTarget) {
+      const by = player.castTarget.y + Math.sin(Date.now()*0.015)*6;
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(player.castTarget.x,by,6,0,Math.PI*2);
+      ctx.fill();
+      if (player.biteTimer < 35) ctx.fillText('❗',player.castTarget.x-10,by-18);
+    }
+
+    floatingTexts = floatingTexts.filter(t => (--t.life) > 0);
+    floatingTexts.forEach(t => {
+      ctx.fillStyle = t.color;
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText(t.text,t.x-40,t.y-(60-t.life)*0.5);
+    });
+
+    particles = particles.filter(p => {
+      p.x += p.vx; p.y += p.vy; p.life -= 0.015;
+      return p.life > 0;
+    });
+    particles.forEach(p => {
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.life;
+      ctx.fillRect(p.x,p.y,p.size,p.size);
+    });
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function maybeOpenShopDialogue() {
+    const lines = [
+      '"Welcome, partner!"',
+      '"Fresh bait, fresh luck."',
+      '"Those waters look dangerous..."',
+      '"Come back after a big catch."'
+    ];
+    ui.jimmyDialogue.textContent = lines[Math.floor(Math.random()*lines.length)];
+  }
+
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (900 / rect.width);
+    const my = (e.clientY - rect.top) * (560 / rect.height);
+    if (Math.hypot(mx - 500, my - 460) < 30) {
+      maybeOpenShopDialogue();
+      $('shopModal').classList.add('active');
+      return;
+    }
+    if (!qteActive && !player.waitingForBite && !player.fishOnLine && !player.bossFight) castLine(mx,my);
+  });
+
+  window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (qteActive) hookFish();
+      else if (player.boatOwned && !player.waitingForBite && !player.isCasting) {
+        player.inOcean = !player.inOcean;
+        if (player.inOcean && oceanZones.length === 0) generateOcean();
+        floatingTexts.push({text:player.inOcean ? '🌊 Ocean!' : '🏝️ Island',x:player.x,y:player.y-20,life:40,color:'#7fc9ff'});
+      }
+    }
+    if (e.code === 'KeyQ') { e.preventDefault(); renderQuestJournal(); $('questModal').classList.toggle('active'); }
+    if (e.code === 'KeyF') { e.preventDefault(); openFishBio(); }
+    if (e.code === 'KeyI') { e.preventDefault(); updateInventoryDisplay(); $('inventoryModal').classList.toggle('active'); }
+    if (e.code === 'KeyS') { e.preventDefault(); saveGame(); }
+    if (e.code === 'Escape') {
+      document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+    }
+  });
+
+  window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+  setInterval(() => {
+    if (qteActive) return;
+    let dx = 0, dy = 0;
+    if (keys['KeyW'] || keys['ArrowUp']) dy--;
+    if (keys['KeyS'] || keys['ArrowDown']) dy++;
+    if (keys['KeyA'] || keys['ArrowLeft']) dx--;
+    if (keys['KeyD'] || keys['ArrowRight']) dx++;
+    if (dx || dy) {
+      const len = Math.sqrt(dx*dx + dy*dy);
+      player.x = Math.min(880, Math.max(20, player.x + dx/len*player.speed));
+      player.y = Math.min(540, Math.max(20, player.y + dy/len*player.speed));
+    }
+  }, 16);
+
+  $('fishBioBtn').addEventListener('click', openFishBio);
+  $('questBtn').addEventListener('click', () => { renderQuestJournal(); $('questModal').classList.add('active'); });
+  $('inventoryBtn').addEventListener('click', () => { updateInventoryDisplay(); $('inventoryModal').classList.add('active'); });
+  $('ratesBtn').addEventListener('click', () => $('ratesModal').classList.add('active'));
+  $('shopBtn').addEventListener('click', () => { maybeOpenShopDialogue(); $('shopModal').classList.add('active'); });
+  $('settingsBtn').addEventListener('click', () => $('settingsModal').classList.add('active'));
+
+  $('sellAllBtn').addEventListener('click', sellAllFish);
+  $('buyBoatBtn').addEventListener('click', buyBoat);
+  ui.craftPearlBtn.addEventListener('click', craftPearl);
+  $('sortInvBtn').addEventListener('click', sortInventory);
+  $('sellDupesBtn').addEventListener('click', sellDuplicates);
+  $('sellRareBtn').addEventListener('click', sellRarePlus);
+  $('saveBtn').addEventListener('click', saveGame);
+  $('loadBtn').addEventListener('click', () => { loadSave(); updateUI(); updateInventoryDisplay(); renderQuestJournal(); openFishBio(); });
+  $('exportSaveBtn').addEventListener('click', () => {
+    const blob = new Blob([localStorage.getItem(STORAGE_KEY) || ''], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mythic-waters-save.json';
+    a.click();
+  });
+  $('importSaveBtn').addEventListener('click', async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      localStorage.setItem(STORAGE_KEY, text);
+      loadSave();
+      updateUI(); updateInventoryDisplay(); renderQuestJournal();
+    };
+    input.click();
+  });
+
+  ui.reduceMotionToggle.addEventListener('change', () => { settings.reduceMotion = ui.reduceMotionToggle.checked; saveGame(); });
+  ui.highContrastToggle.addEventListener('change', () => { settings.highContrast = ui.highContrastToggle.checked; saveGame(); });
+  ui.autoSaveToggle.addEventListener('change', () => { settings.autoSave = ui.autoSaveToggle.checked; saveGame(); });
+  ui.showTipsToggle.addEventListener('change', () => { settings.showTips = ui.showTipsToggle.checked; saveGame(); });
+  ui.bioSearch.addEventListener('input', openFishBio);
+
+  function syncSettingsUI() {
+    ui.reduceMotionToggle.checked = settings.reduceMotion;
+    ui.highContrastToggle.checked = settings.highContrast;
+    ui.autoSaveToggle.checked = settings.autoSave;
+    ui.showTipsToggle.checked = settings.showTips;
+  }
+
+  function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  loadSave();
+  syncSettingsUI();
+  if (player.inOcean && oceanZones.length === 0) generateOcean();
+  updateUI();
+  updateInventoryDisplay();
+  renderQuestJournal();
+  openFishBio();
+  saveGame();
+  gameLoop();
+})();
+</script>
+</body>
+</html>
