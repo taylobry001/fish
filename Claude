@@ -117,10 +117,17 @@ body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-actio
   width:10px;height:28px;background:var(--gold);border-radius:5px;
   box-shadow:0 0 16px var(--gold),0 0 32px rgba(201,149,58,0.5);
   transition:left 0.04s;
+  animation:reelPulse 0.1s ease-in-out;
+}
+@keyframes reelPulse {
+  0%, 100% { box-shadow: 0 0 16px var(--gold), 0 0 32px rgba(201,149,58,0.5); }
+  50% { box-shadow: 0 0 20px var(--gold), 0 0 40px rgba(201,149,58,0.8); }
 }
 #reel-label{font-family:var(--font-mono);font-size:10px;color:var(--textdim);text-align:center;margin-top:6px;}
-#reel-tension{height:6px;background:rgba(0,0,0,0.4);border-radius:3px;margin-top:6px;}
-#reel-tension-fill{height:100%;background:linear-gradient(90deg,#2ecc71,#e74c3c);border-radius:3px;transition:width 0.1s;}
+#reel-tension{height:6px;background:rgba(0,0,0,0.4);border-radius:3px;margin-top:6px;overflow:hidden;}
+#reel-tension-fill{height:100%;background:linear-gradient(90deg,#2ecc71,#e74c3c);border-radius:3px;transition:width 0.15s;box-shadow:0 0 8px currentColor;}
+#reel-progress{height:8px;background:rgba(0,0,0,0.4);border-radius:4px;margin-top:8px;overflow:hidden;}
+#reel-progress-fill{height:100%;background:linear-gradient(90deg,var(--eldritch),var(--gold));border-radius:4px;transition:width 0.2s;}
 #cast-meter{
   position:fixed;bottom:80px;right:16px;
   width:36px;height:140px;
@@ -177,7 +184,7 @@ body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-actio
 </head>
 <body>
 <canvas id="canvas"></canvas>
- 
+
 <div id="hud">
   <div class="hud-left">
     <div class="stat">⚓ <span id="hud-coins">0</span>💰 · Lv<span id="hud-level">1</span></div>
@@ -194,10 +201,10 @@ body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-actio
     <div class="stat">🌊 <span id="hud-weather">Calm</span></div>
   </div>
 </div>
- 
+
 <div id="layer-indicator">LAYER <span id="layer-num">1</span></div>
 <div id="event-banner" id="event-banner">⚡ EVENT</div>
- 
+
 <div id="reel-overlay">
   <div style="font-family:var(--font-display);font-size:11px;color:var(--goldhi);margin-bottom:8px;text-align:center;" id="reel-fish-name">Unknown Entity</div>
   <div id="reel-track">
@@ -205,21 +212,22 @@ body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-actio
     <div id="reel-cursor"></div>
   </div>
   <div id="reel-tension"><div id="reel-tension-fill" style="width:50%"></div></div>
+  <div id="reel-progress"><div id="reel-progress-fill" style="width:50%"></div></div>
   <div id="reel-label">TAP / SPACE to reel · Stay in the zone</div>
 </div>
- 
+
 <div id="cast-meter">
   <div id="cast-meter-fill" style="height:0%"></div>
   <div id="cast-meter-zone"></div>
 </div>
- 
+
 <div id="catch-popup">
   <span id="catch-emoji">🐟</span>
   <div id="catch-name">Unknown</div>
   <div id="catch-rarity-text"></div>
   <div id="catch-stats"></div>
 </div>
- 
+
 <div id="btm-bar">
   <button class="btn" id="btn-quests">📜 Quests</button>
   <button class="btn" id="btn-enc">📖 Lore</button>
@@ -228,7 +236,7 @@ body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-actio
   <button class="btn" id="btn-upgrade">⚗️ Rod</button>
   <button class="btn danger" id="btn-dive">🌊 Dive</button>
 </div>
- 
+
 <!-- Modals -->
 <div class="modal-overlay" id="modal-quests">
   <div class="modal">
@@ -240,7 +248,7 @@ body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-actio
     <h3>Completed</h3><div id="quest-done-list"></div>
   </div>
 </div>
- 
+
 <div class="modal-overlay" id="modal-enc">
   <div class="modal">
     <span class="modal-close" onclick="closeModal('modal-enc')">✕</span>
@@ -249,7 +257,7 @@ body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-actio
     <div id="enc-list"></div>
   </div>
 </div>
- 
+
 <div class="modal-overlay" id="modal-shop">
   <div class="modal">
     <span class="modal-close" onclick="closeModal('modal-shop')">✕</span>
@@ -264,7 +272,7 @@ body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-actio
     <div id="shop-artifact-list"></div>
   </div>
 </div>
- 
+
 <div class="modal-overlay" id="modal-inv">
   <div class="modal">
     <span class="modal-close" onclick="closeModal('modal-inv')">✕</span>
@@ -275,7 +283,7 @@ body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-actio
     <div id="inv-fish-list"></div>
   </div>
 </div>
- 
+
 <div class="modal-overlay" id="modal-upgrade">
   <div class="modal">
     <span class="modal-close" onclick="closeModal('modal-upgrade')">✕</span>
@@ -283,22 +291,22 @@ body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-actio
     <div id="upgrade-list"></div>
   </div>
 </div>
- 
+
 <script>
 // ═══════════════════════════════════════════════════════════
 //  ELDRITCH DEPTHS: TALE FISHER — Full Engine
 // ═══════════════════════════════════════════════════════════
- 
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let W = canvas.width = window.innerWidth;
 let H = canvas.height = window.innerHeight;
- 
+
 window.addEventListener('resize', () => {
   W = canvas.width = window.innerWidth;
   H = canvas.height = window.innerHeight;
 });
- 
+
 // ─── SAVE ────────────────────────────────────────────────
 const SAVE_KEY = 'eldritch_depths_v3';
 function saveGame() {
@@ -321,7 +329,7 @@ function loadGame() {
     G.weather = s.weather || 'calm';
   } catch(e) { console.warn('Save load failed', e); }
 }
- 
+
 // ─── FISH DATABASE ───────────────────────────────────────
 const FISH = [
   // Commons
@@ -375,7 +383,7 @@ const FISH = [
   {id:'poseidon_guard',name:"Poseidon's Last Guard",emoji:'🔱',rarity:'mythical',layer:5,weight:[800,2000],value:30000,xp:20000,qte:'boss',desc:'The god is dead. This was its champion. It still fights.',sanityDrain:50,mythical:true,questLocked:'poseidon_quest'},
   {id:'cthulhu_fry',name:'Cthulhu Fry',emoji:'🐙',rarity:'mythical',layer:5,weight:[1000,3000],value:50000,xp:30000,qte:'boss',desc:"Ph'nglui mglw'nafh. You caught IT. The sleeping one stirs.",sanityDrain:80,mythical:true,questLocked:'cthulhu_final'},
 ];
- 
+
 // ─── QUESTS ──────────────────────────────────────────────
 const QUEST_DEFS = [
   {
@@ -507,7 +515,7 @@ const QUEST_DEFS = [
     desc:"The rare tides run once per day.",npcHint:'"Watch the tide charts. Watch for the red."'
   },
 ];
- 
+
 // ─── SHOP ────────────────────────────────────────────────
 const BAIT_SHOP = [
   {id:'basic_bait',name:'Basic Bait',cost:10,desc:'Common fish only.',emoji:'🪱'},
@@ -519,7 +527,7 @@ const BAIT_SHOP = [
   {id:'deep_bait',name:'Depth Bait',cost:150,desc:'Boosts abyss layer fish. +60% deep fish.',emoji:'🕳️'},
   {id:'sanity_bait',name:'Sanity Bait',cost:200,desc:'+20 sanity on catch. Use wisely.',emoji:'🧠'},
 ];
- 
+
 const ROD_UPGRADES = [
   {id:'rod_strength',name:'Rod Strength',maxLevel:10,baseCost:100,desc:'Wider reel zone. (+5% per level)',stat:'reelWidth'},
   {id:'rod_speed',name:'Reel Speed',maxLevel:8,baseCost:150,desc:'Slower cursor. (-0.1 speed per level)',stat:'reelSpeed'},
@@ -528,7 +536,7 @@ const ROD_UPGRADES = [
   {id:'rod_xp',name:'XP Multiplier',maxLevel:5,baseCost:300,desc:'+20% XP per catch per level.',stat:'xpMult'},
   {id:'rod_auto',name:'Auto-Reel',maxLevel:1,baseCost:2000,desc:'Auto-reels 30% of easy fish.',stat:'autoReel'},
 ];
- 
+
 // ─── GAME STATE ──────────────────────────────────────────
 const G = {
   player: {
@@ -575,7 +583,7 @@ const G = {
   eventBanner: '',
   eventBannerTimer: 0,
 };
- 
+
 // ─── UPGRADE HELPERS ─────────────────────────────────────
 function getUpgradeLevel(id) { return G.player.upgrades[id] || 0; }
 function upgradeCost(id) {
@@ -589,7 +597,7 @@ function getReelCursorSpeed() { return Math.max(0.3, 1.8 - getUpgradeLevel('rod_
 function getSanityResist() { return 1 - getUpgradeLevel('rod_sanity') * 0.08; }
 function getLuckBonus() { return 1 + getUpgradeLevel('rod_luck') * 0.05; }
 function getXpMult() { return 1 + getUpgradeLevel('rod_xp') * 0.2; }
- 
+
 // ─── BOIDS ───────────────────────────────────────────────
 function initBoids(n=30) {
   G.boids = [];
@@ -602,7 +610,7 @@ function initBoids(n=30) {
     });
   }
 }
- 
+
 function updateBoids() {
   const sep=25,ali=80,coh=100,maxSpeed=2,avoidR=120;
   const lure = G.bobber;
@@ -633,7 +641,7 @@ function updateBoids() {
     b.y=Math.max(H*0.22,Math.min(H*0.88,b.y));
   }
 }
- 
+
 // ─── PARTICLES ───────────────────────────────────────────
 function spawnParticles(x,y,n,color,type='splash') {
   for(let i=0;i<n;i++) {
@@ -649,7 +657,7 @@ function spawnParticles(x,y,n,color,type='splash') {
 function floatText(x,y,text,color='#f4d57e',size=14) {
   G.floats.push({x,y,text,color,size,life:1,vy:-0.7});
 }
- 
+
 // ─── WEATHER ─────────────────────────────────────────────
 const WEATHERS = ['calm','calm','calm','rain','fog','storm','aurora','storm'];
 function tickWeather() {
@@ -660,7 +668,7 @@ function tickWeather() {
     G.time = G.time; // keep time
   }
 }
- 
+
 // ─── FISH SELECTION ──────────────────────────────────────
 function selectFish() {
   const bait = G.player.activeBait;
@@ -669,46 +677,46 @@ function selectFish() {
   const storm = G.weather === 'storm';
   const fog = G.weather === 'fog';
   const aurora = G.weather === 'aurora';
- 
+
   // Check if a mythical is ready from quest
   if(G.questMythicalReady) {
     const f = FISH.find(f=>f.id===G.questMythicalReady);
     if(f) { G.questMythicalReady=null; return f; }
   }
- 
+
   let pool = FISH.filter(f => {
     if(f.mythical) return false; // only via quest
     if(f.layer > layer) return false;
     return true;
   });
- 
+
   const weights = pool.map(f => {
     let w = {
       common: 100, uncommon:40, rare:15, epic:5, eldritch:2
     }[f.rarity] || 2;
- 
+
     // Bait modifiers
     if(bait==='glowbait' && f.eldritch) w *= 3;
     if(bait==='abyssal_lure' && f.rarity==='eldritch') w *= 2;
     if(bait==='slimebait' && f.id==='shoggoth') w *= 8;
     if(bait==='deep_bait' && f.layer>=3) w *= 2.5;
     if(bait==='prism_bait' && f.id==='colourspace') w *= 8;
- 
+
     // Weather modifiers
     if(storm && f.eldritch) w *= 2.5;
     if(aurora && f.rarity==='epic') w *= 2;
     if(fog && f.rarity==='rare') w *= 1.8;
     if(night && ['anglerfish','viperfish','goblinshark','nightgaunt'].includes(f.id)) w *= 3;
- 
+
     // Layer bonus
     if(f.layer === layer) w *= 1.5;
- 
+
     // Luck
     w *= getLuckBonus();
- 
+
     return { f, w };
   });
- 
+
   let total = weights.reduce((s,i)=>s+i.w,0);
   let r = Math.random()*total;
   for(const {f,w} of weights) {
@@ -716,7 +724,7 @@ function selectFish() {
   }
   return pool[0];
 }
- 
+
 // ─── REEL ────────────────────────────────────────────────
 function startReel(fish) {
   G.state = 'reeling';
@@ -735,7 +743,9 @@ function startReel(fish) {
     phase:0, // 0=normal, 1=tentacle dodge, 2=sanity wave
     phaseTimer:0,
     maxProgress:100,
-    failed:false
+    failed:false,
+    hitFlash:0,
+    missFlash:0
   };
   const zoneEl = document.getElementById('reel-zone');
   zoneEl.style.left = G.reel.zoneStart+'%';
@@ -744,56 +754,93 @@ function startReel(fish) {
   document.getElementById('reel-overlay').classList.add('active');
   G.glitch = fish.eldritch || fish.mythical;
 }
- 
+
 function tickReel() {
   if(!G.reel) return;
   const r = G.reel;
+  // Smooth cursor movement
   r.cursor += r.speed * r.dir;
   if(r.cursor>=95){r.dir=-1;}
   if(r.cursor<=5){r.dir=1;}
-  r.progress -= 0.12;
-  r.tension += (Math.random()-0.48)*0.5;
+  // Passive progress drain (slower for better feel)
+  r.progress -= 0.08;
+  // Tension fluctuation
+  r.tension += (Math.random()-0.48)*0.6;
   r.tension = Math.max(10,Math.min(90,r.tension));
+  
+  // Update cursor position
+  document.getElementById('reel-cursor').style.left=r.cursor+'%';
+  
+  // Update progress bar
+  const progressFill = document.getElementById('reel-progress-fill');
+  if(progressFill) {
+    progressFill.style.width = Math.max(0, Math.min(100, r.progress)) + '%';
+    const pct = r.progress / 100;
+    progressFill.style.background = 
+      pct > 0.7 ? 'linear-gradient(90deg, #2ecc71, var(--gold))' :
+      pct > 0.4 ? 'linear-gradient(90deg, var(--eldritch), var(--gold))' :
+      'linear-gradient(90deg, #e74c3c, var(--gold))';
+  }
+  
+  // Multi-phase boss mechanics
   r.phaseTimer++;
   if((r.fish.qte==='boss'||r.fish.rarity==='eldritch') && r.phaseTimer>180) {
     r.phase = (r.phase+1)%3;
     r.phaseTimer=0;
     if(r.phase===1) {
+      // Tentacle dodge phase
       r.zoneStart = 10+Math.random()*40;
-      r.zoneEnd = r.zoneStart + getReelZoneWidth()*0.7;
-      floatText(W/2,H/2,'⚠️ DODGE!','#e74c3c',16);
+      r.zoneEnd = Math.min(95, r.zoneStart + getReelZoneWidth()*0.6);
+      floatText(W/2,H/2,'⚠️ DODGE ATTACK!','#e74c3c',16);
       document.getElementById('reel-zone').style.left=r.zoneStart+'%';
       document.getElementById('reel-zone').style.width=(r.zoneEnd-r.zoneStart)+'%';
     } else if(r.phase===2) {
+      // Sanity wave phase
       drainSanity(5*getSanityResist());
-      floatText(W/2,H/2-20,'🧠 SANITY WAVE','#e040fb',14);
+      floatText(W/2,H/2-20,'🧠 SANITY WAVE INCOMING!','#e040fb',14);
     }
   }
+  
   if(r.progress<=0) { reelFail(); return; }
-  document.getElementById('reel-cursor').style.left=r.cursor+'%';
-  document.getElementById('reel-tension-fill').style.width=r.tension+'%';
-  document.getElementById('reel-overlay').querySelector('#reel-tension-fill').style.background =
-    r.tension>70 ? 'linear-gradient(90deg,#e74c3c,#c0392b)' : 'linear-gradient(90deg,#2ecc71,#e74c3c)';
 }
- 
+
 function reelHook() {
   if(!G.reel) return;
   const r=G.reel;
   const inZone = r.cursor>=r.zoneStart && r.cursor<=r.zoneEnd;
   if(inZone) {
     r.progress=Math.min(r.maxProgress,r.progress+18);
+    r.hitFlash = 15;
     spawnParticles(W/2,H*0.5,8,'#2ecc71','splash');
-    floatText(W/2,H*0.45,'✓',  '#2ecc71',18);
+    floatText(W/2,H*0.45,'✓','#2ecc71',18);
     if(r.progress>=r.maxProgress) reelSuccess();
   } else {
     r.progress-=12;
+    r.missFlash = 15;
     G.screenShake=6;
     floatText(W/2,H*0.45,'✗','#e74c3c',18);
     if(r.progress<=0) reelFail();
   }
-  document.getElementById('reel-overlay').querySelector('#reel-tension-fill').style.width=r.tension+'%';
+  // Visual feedback
+  const reelFillEl = document.getElementById('reel-overlay').querySelector('#reel-tension-fill');
+  reelFillEl.style.width=r.tension+'%';
+  reelFillEl.style.background = 
+    r.tension>70 ? 'linear-gradient(90deg,#e74c3c,#c0392b)' : 'linear-gradient(90deg,#2ecc71,#e74c3c)';
+  
+  // Flash effect for hits/misses
+  if(r.hitFlash > 0) {
+    const overlay = document.getElementById('reel-overlay');
+    overlay.style.background = `rgba(46,204,113,${(r.hitFlash/15)*0.3})`;
+    r.hitFlash--;
+  } else if(r.missFlash > 0) {
+    const overlay = document.getElementById('reel-overlay');
+    overlay.style.background = `rgba(231,76,60,${(r.missFlash/15)*0.3})`;
+    r.missFlash--;
+  } else {
+    document.getElementById('reel-overlay').style.background = 'rgba(2,4,8,0.95)';
+  }
 }
- 
+
 function reelSuccess() {
   const fish = G.reel.fish;
   document.getElementById('reel-overlay').classList.remove('active');
@@ -804,7 +851,7 @@ function reelSuccess() {
     updateQuestProgress('boss_reel',1);
   }
 }
- 
+
 function reelFail() {
   document.getElementById('reel-overlay').classList.remove('active');
   G.reel=null; G.state='idle'; G.fishOnLine=null; G.bobber=null; G.glitch=false;
@@ -812,7 +859,7 @@ function reelFail() {
   G.screenShake=10;
   drainSanity(3);
 }
- 
+
 // ─── SANITY ──────────────────────────────────────────────
 function drainSanity(amount) {
   const actual = amount * getSanityResist();
@@ -825,26 +872,26 @@ function drainSanity(amount) {
     G.player.sanity=5; // survive, barely
   }
 }
- 
+
 function regenSanity(amount) {
   G.player.sanity = Math.min(G.player.maxSanity, G.player.sanity+amount);
 }
- 
+
 // ─── CATCH ───────────────────────────────────────────────
 function catchFish(fish) {
   const w1 = fish.weight[0], w2 = fish.weight[1];
   const weight = w1===0&&w2===0 ? 0 : +(w1 + Math.random()*(w2-w1)).toFixed(1);
   const xpGain = Math.floor(fish.xp * getXpMult());
- 
+
   G.player.catches++;
   G.player.coins += fish.value;
   G.player.xp += xpGain;
   G.player.inventory.push({fish:fish.id, weight, value:fish.value, caught:Date.now()});
   G.player.discoveredFish.add(fish.id);
- 
+
   if(fish.sanityDrain) drainSanity(fish.sanityDrain);
   else regenSanity(2);
- 
+
   // Level up
   while(G.player.xp >= G.player.xpThreshold) {
     G.player.xp -= G.player.xpThreshold;
@@ -858,13 +905,13 @@ function catchFish(fish) {
     if(G.player.level>=30 && G.player.layer<4) unlockLayer(4);
     if(G.player.level>=50 && G.player.layer<5) unlockLayer(5);
   }
- 
+
   updateQuestProgress('catch', fish.id, 1);
   updateQuestProgress('catch_rarity', fish.rarity, 1);
   if(fish.eldritch) updateQuestProgress('catch_eldritch', null, 1);
   if(fish.mythical) updateQuestProgress('catch_mythical', fish.id, 1);
   updateQuestProgress('total_catches', null, 1);
- 
+
   // Show catch popup
   showCatchPopup(fish, weight, xpGain);
   spawnParticles(W/2, H*0.4, 20, fish.eldritch ? '#e040fb' : '#2ecc71', fish.eldritch ? 'gore' : 'splash');
@@ -873,20 +920,20 @@ function catchFish(fish) {
     G.screenShake=20;
     showEventBanner(`🏆 MYTHICAL CAUGHT: ${fish.name}!`);
   }
- 
+
   G.bobber = null; G.fishOnLine = null;
   setTimeout(()=>{ G.state='idle'; }, 500);
- 
+
   updateHUD();
   maybeAutoSave();
 }
- 
+
 function unlockLayer(n) {
   G.player.layer = Math.max(G.player.layer, n);
   floatText(W/2, H/2, `🌊 LAYER ${n} UNLOCKED`, '#e040fb', 18);
   showEventBanner(`🌊 Abyssal Layer ${n} Unlocked — Deeper Terrors Await`);
 }
- 
+
 function showCatchPopup(fish, weight, xp) {
   document.getElementById('catch-emoji').textContent = fish.emoji;
   document.getElementById('catch-name').textContent = fish.name;
@@ -901,10 +948,10 @@ function showCatchPopup(fish, weight, xp) {
   popup.classList.add('show');
   setTimeout(()=>popup.classList.remove('show'), 2500);
 }
- 
+
 // ─── QUEST ENGINE ─────────────────────────────────────────
 function getQuestState(id) { return G.quests.find(q=>q.id===id); }
- 
+
 function updateQuestProgress(type, param, amount) {
   G.quests.forEach(qs => {
     if(!qs.active || qs.done) return;
@@ -912,7 +959,7 @@ function updateQuestProgress(type, param, amount) {
     if(!def) return;
     const step = def.steps[qs.stepIndex];
     if(!step) return;
- 
+
     let matched = false;
     if(type==='catch' && step.type==='catch' && step.fishId===param) matched=true;
     if(type==='catch_rarity' && step.type==='catch_rarity' && step.rarity===param) matched=true;
@@ -937,11 +984,11 @@ function updateQuestProgress(type, param, amount) {
       const caught=epics.filter(f=>G.player.discoveredFish.has(f.id)).length;
       if(caught>=epics.length) {qs.progress[qs.stepIndex]=1; matched=false;}
     }
- 
+
     if(matched) {
       qs.progress[qs.stepIndex] = Math.min(step.amount, (qs.progress[qs.stepIndex]||0) + amount);
     }
- 
+
     // Advance step?
     if((qs.progress[qs.stepIndex]||0) >= step.amount) {
       if(qs.stepIndex < def.steps.length-1) {
@@ -974,33 +1021,33 @@ function updateQuestProgress(type, param, amount) {
     }
   });
 }
- 
+
 function addBait(id, amount) {
   const b = G.player.bait.find(b=>b.id===id);
   if(b) b.amount+=amount;
   else G.player.bait.push({id,amount});
 }
- 
+
 function getBaitAmount(id) {
   return G.player.bait.find(b=>b.id===id)?.amount||0;
 }
- 
+
 function showEventBanner(text) {
   G.eventBanner=text; G.eventBannerTimer=200;
   const el=document.getElementById('event-banner');
   el.textContent=text; el.classList.add('show');
 }
- 
+
 // ─── CASTING ─────────────────────────────────────────────
 let castCharging=false, castPow=0, castPowDir=1;
- 
+
 function startCast() {
   if(G.state!=='idle') return;
   G.state='casting';
   castCharging=true; castPow=0; castPowDir=1;
   document.getElementById('cast-meter').classList.add('active');
 }
- 
+
 function releaseCast(tx=W/2,ty=H*0.4) {
   if(G.state!=='casting') return;
   castCharging=false;
@@ -1011,7 +1058,7 @@ function releaseCast(tx=W/2,ty=H*0.4) {
   G.biteTimer = 60+Math.random()*180;
   floatText(tx,ty-20,'🎣','#c9953a',16);
 }
- 
+
 // ─── HUD ─────────────────────────────────────────────────
 function updateHUD() {
   document.getElementById('hud-coins').textContent = G.player.coins;
@@ -1038,7 +1085,7 @@ function updateHUD() {
     if(G.eventBannerTimer<=0) document.getElementById('event-banner').classList.remove('show');
   }
 }
- 
+
 // ─── DRAW ─────────────────────────────────────────────────
 function getLayerPalette() {
   const palettes=[
@@ -1050,7 +1097,7 @@ function getLayerPalette() {
   ];
   return palettes[Math.min(G.player.layer-1,4)];
 }
- 
+
 function drawOcean(pal) {
   const t=G.waveTime;
   // Sky gradient
@@ -1058,7 +1105,7 @@ function drawOcean(pal) {
   skyGrad.addColorStop(0,G.weather==='aurora'?'#0d1a2a':pal.sky);
   skyGrad.addColorStop(1,pal.water);
   ctx.fillStyle=skyGrad; ctx.fillRect(0,0,W,H*0.35);
- 
+
   // Aurora
   if(G.weather==='aurora') {
     for(let i=0;i<5;i++){
@@ -1069,14 +1116,14 @@ function drawOcean(pal) {
       ctx.fillStyle=g; ctx.fillRect(0,H*(0.05+i*0.04),W,H*0.06);
     }
   }
- 
+
   // Ocean body
   const oceGrad=ctx.createLinearGradient(0,H*0.3,0,H);
   oceGrad.addColorStop(0,pal.water);
   oceGrad.addColorStop(0.4,pal.deep);
   oceGrad.addColorStop(1,'#000');
   ctx.fillStyle=oceGrad; ctx.fillRect(0,H*0.3,W,H*0.7);
- 
+
   // Animated waves
   for(let wave=0;wave<3;wave++){
     ctx.beginPath();
@@ -1089,7 +1136,7 @@ function drawOcean(pal) {
     ctx.fillStyle=pal.foam;
     ctx.fill();
   }
- 
+
   // Depth fog
   if(G.player.layer>=3){
     const fog=ctx.createLinearGradient(0,H*0.5,0,H);
@@ -1097,7 +1144,7 @@ function drawOcean(pal) {
     fog.addColorStop(1,`rgba(0,0,0,${0.3+G.player.layer*0.1})`);
     ctx.fillStyle=fog; ctx.fillRect(0,H*0.5,W,H*0.5);
   }
- 
+
   // Storm effect
   if(G.weather==='storm'&&Math.random()<0.03){
     ctx.strokeStyle='rgba(200,200,255,0.5)';
@@ -1107,7 +1154,7 @@ function drawOcean(pal) {
     ctx.moveTo(lx,0); ctx.lineTo(lx+20,H*0.4);
     ctx.stroke();
   }
- 
+
   // Fog overlay
   if(G.weather==='fog'){
     const fogRad=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.8);
@@ -1116,7 +1163,7 @@ function drawOcean(pal) {
     ctx.fillStyle=fogRad; ctx.fillRect(0,0,W,H);
   }
 }
- 
+
 function drawBoids(pal) {
   for(const b of G.boids){
     ctx.save();
@@ -1144,7 +1191,7 @@ function drawBoids(pal) {
     ctx.restore();
   }
 }
- 
+
 function drawPlayer() {
   const t=G.waveTime;
   const px=W/2, py=H*0.3-8;
@@ -1173,7 +1220,7 @@ function drawPlayer() {
   ctx.strokeStyle='#6b4c2a';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(-18,-2);ctx.lineTo(-28,-20);ctx.stroke();
   ctx.restore();
- 
+
   // Line to bobber
   if(G.bobber){
     ctx.strokeStyle='rgba(200,200,200,0.5)'; ctx.lineWidth=1;
@@ -1197,7 +1244,7 @@ function drawPlayer() {
     }
   }
 }
- 
+
 function drawParticles() {
   for(const p of G.particles){
     ctx.globalAlpha=p.life;
@@ -1211,7 +1258,7 @@ function drawParticles() {
   }
   ctx.globalAlpha=1;
 }
- 
+
 function drawFloats() {
   ctx.textAlign='center';
   for(const f of G.floats){
@@ -1222,7 +1269,7 @@ function drawFloats() {
   }
   ctx.globalAlpha=1;
 }
- 
+
 function drawSanityVfx() {
   const s=G.player.sanity;
   if(s<80){
@@ -1248,17 +1295,17 @@ function drawSanityVfx() {
     }
   }
 }
- 
+
 // ─── GAME LOOP ───────────────────────────────────────────
 function update() {
   G.frameCount++;
   G.waveTime+=0.02;
   G.time+=0.0003;
   if(G.time>1)G.time=0;
- 
+
   tickWeather();
   updateBoids();
- 
+
   // Cast power charge
   if(castCharging && G.state==='casting'){
     castPow+=castPowDir*1.5;
@@ -1266,7 +1313,7 @@ function update() {
     if(castPow<=0){castPow=0;castPowDir=1;}
     document.getElementById('cast-meter-fill').style.height=castPow+'%';
   }
- 
+
   // Waiting for bite
   if(G.state==='waiting'){
     G.biteTimer--;
@@ -1276,12 +1323,12 @@ function update() {
       startReel(G.fishOnLine);
     }
   }
- 
+
   if(G.state==='reeling') tickReel();
- 
+
   // Passive sanity drain
   if(G.frameCount%300===0) drainSanity(0.5);
- 
+
   // Particles
   G.particles=G.particles.filter(p=>{
     p.x+=p.vx; p.y+=p.vy;
@@ -1292,12 +1339,12 @@ function update() {
   G.floats=G.floats.filter(f=>{
     f.y+=f.vy; f.life-=0.012; return f.life>0;
   });
- 
+
   if(G.screenShake>0){G.screenShake*=0.88;}
- 
+
   updateHUD();
 }
- 
+
 function draw() {
   ctx.clearRect(0,0,W,H);
   const pal=getLayerPalette();
@@ -1313,22 +1360,22 @@ function draw() {
   drawSanityVfx();
   ctx.restore();
 }
- 
+
 function loop() {
   update();
   draw();
   requestAnimationFrame(loop);
 }
- 
+
 // ─── UI ACTIONS ──────────────────────────────────────────
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 window.closeModal=closeModal;
- 
+
 function openModal(id){
   document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'));
   document.getElementById(id).classList.add('open');
 }
- 
+
 function sellAll() {
   let total=0;
   for(const item of G.player.inventory) {
@@ -1340,7 +1387,7 @@ function sellAll() {
   updateHUD(); renderInv(); maybeAutoSave();
 }
 window.sellAll=sellAll;
- 
+
 function sellRares() {
   const rare=['rare','epic','eldritch','mythical','legendary'];
   let total=0,keep=[];
@@ -1354,7 +1401,7 @@ function sellRares() {
   updateHUD(); renderInv(); maybeAutoSave();
 }
 window.sellRares=sellRares;
- 
+
 function renderQuests() {
   const seer=['The lines between worlds thin with each catch...',
     '"It watches you fish. It has watched since before fish existed."',
@@ -1362,14 +1409,14 @@ function renderQuests() {
     '"The Mythical waits at the end of the chain, not the end of luck."',
     '"Cast deep. The surface lies."'];
   document.getElementById('quest-npc-msg').textContent=seer[Math.floor(Math.random()*seer.length)];
- 
+
   let activeHtml='',availHtml='',doneHtml='';
   G.quests.forEach(qs=>{
     const def=QUEST_DEFS.find(d=>d.id===qs.id);
     if(!def) return;
     const step=qs.active&&!qs.done?def.steps[qs.stepIndex]:null;
     const progress=qs.progress[qs.stepIndex]||0;
- 
+
     const card=`<div class="quest-item ${qs.done?'complete':qs.active?'active':''}">
       <div class="quest-title">${qs.done?'✅':qs.active?'⏳':'📋'} ${def.name}</div>
       <div class="quest-desc">${def.desc}</div>
@@ -1381,7 +1428,7 @@ function renderQuests() {
         :(def.layer&&G.player.layer<def.layer?`<span style="font-size:9px;color:#e74c3c;">Requires Layer ${def.layer}</span>`:'')
       }
     </div>`;
- 
+
     if(qs.done) doneHtml+=card;
     else if(qs.active) activeHtml+=card;
     else availHtml+=card;
@@ -1390,7 +1437,7 @@ function renderQuests() {
   document.getElementById('quest-available-list').innerHTML=availHtml||'<p style="font-size:10px;color:var(--textdim);">None available at your layer.</p>';
   document.getElementById('quest-done-list').innerHTML=doneHtml||'';
 }
- 
+
 function acceptQuest(id) {
   const qs=G.quests.find(q=>q.id===id);
   const def=QUEST_DEFS.find(d=>d.id===id);
@@ -1402,7 +1449,7 @@ function acceptQuest(id) {
   renderQuests();
 }
 window.acceptQuest=acceptQuest;
- 
+
 function renderEnc() {
   const term=(document.getElementById('enc-search')?.value||'').toLowerCase();
   document.getElementById('enc-count').textContent=`${G.player.discoveredFish.size}/${FISH.length}`;
@@ -1420,7 +1467,7 @@ function renderEnc() {
   }).join('');
   document.getElementById('enc-list').innerHTML=html;
 }
- 
+
 function renderShop() {
   const seer=["\"The altar hungers.\"","\"These baits cost me dearly. Worth it.\"","\"Trade well.\"","\"The deep demands a tithe.\""];
   document.getElementById('shop-seer-msg').textContent=seer[Math.floor(Math.random()*seer.length)];
@@ -1433,12 +1480,12 @@ function renderShop() {
       </div>
       <button class="btn" onclick="buyBait('${b.id}')" style="font-size:9px;padding:4px 8px;">${G.player.coins>=b.cost?'Buy':'💀'}</button>
     </div>`).join('');
- 
+
   document.getElementById('shop-artifact-list').innerHTML=G.player.artifacts.length?
     G.player.artifacts.map(a=>`<div class="fish-card"><span>🔮</span><div>${a}</div></div>`).join(''):
     '<p style="font-size:10px;color:var(--textdim);">No artifacts yet. Complete quest chains.</p>';
 }
- 
+
 function buyBait(id) {
   const b=BAIT_SHOP.find(b=>b.id===id);
   if(!b||G.player.coins<b.cost) return;
@@ -1449,7 +1496,7 @@ function buyBait(id) {
   updateHUD(); renderShop(); maybeAutoSave();
 }
 window.buyBait=buyBait;
- 
+
 function renderInv() {
   document.getElementById('inv-coins').textContent=G.player.coins;
   const baitStr=G.player.bait.map(b=>{
@@ -1469,7 +1516,7 @@ function renderInv() {
     </div>`;
   }).join('');
 }
- 
+
 function renderUpgrades() {
   document.getElementById('upgrade-list').innerHTML=ROD_UPGRADES.map(u=>{
     const lv=getUpgradeLevel(u.id);
@@ -1485,7 +1532,7 @@ function renderUpgrades() {
     </div>`;
   }).join('');
 }
- 
+
 function buyUpgrade(id) {
   const def=ROD_UPGRADES.find(r=>r.id===id);
   if(!def) return;
@@ -1499,7 +1546,7 @@ function buyUpgrade(id) {
   updateHUD(); renderUpgrades(); maybeAutoSave();
 }
 window.buyUpgrade=buyUpgrade;
- 
+
 // ─── BAIT SELECTION ──────────────────────────────────────
 function cycleBait() {
   const available=G.player.bait.filter(b=>b.amount>0);
@@ -1512,11 +1559,11 @@ function cycleBait() {
   const b=G.player.bait.find(b=>b.id===G.player.activeBait);
   if(b&&b.amount>0) b.amount--;
 }
- 
+
 // ─── INPUT ───────────────────────────────────────────────
 let touchStartX=0,touchStartY=0,touchStartTime=0;
 let castTapStart=null;
- 
+
 canvas.addEventListener('touchstart',e=>{
   e.preventDefault();
   const t=e.changedTouches[0];
@@ -1528,7 +1575,7 @@ canvas.addEventListener('touchstart',e=>{
     reelHook();
   }
 },{passive:false});
- 
+
 canvas.addEventListener('touchend',e=>{
   e.preventDefault();
   if(G.state==='casting'){
@@ -1539,7 +1586,7 @@ canvas.addEventListener('touchend',e=>{
     releaseCast(tx,ty);
   }
 },{passive:false});
- 
+
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'||e.code==='Enter'){
     e.preventDefault();
@@ -1554,13 +1601,13 @@ document.addEventListener('keydown',e=>{
   if(e.code==='KeyE'){ renderEnc(); openModal('modal-enc'); }
   if(e.code==='KeyI'){ renderInv(); openModal('modal-inv'); }
 });
- 
+
 // Cast meter zone positioning
 (function setCastZone(){
   const el=document.getElementById('cast-meter-zone');
   el.style.bottom='30%'; el.style.height='25%';
 })();
- 
+
 // Button wiring
 document.getElementById('btn-quests').addEventListener('click',()=>{ renderQuests(); openModal('modal-quests'); });
 document.getElementById('btn-enc').addEventListener('click',()=>{ renderEnc(); openModal('modal-enc'); G.player.loreRead++; updateQuestProgress('lore_read',null,1); });
@@ -1575,26 +1622,26 @@ document.getElementById('btn-dive').addEventListener('click',()=>{
     showEventBanner("You are already in the deepest abyss. There is nowhere left to fall.");
   }
 });
- 
+
 document.getElementById('enc-search').addEventListener('input', renderEnc);
- 
+
 // Close modals on overlay click
 document.querySelectorAll('.modal-overlay').forEach(m=>{
   m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
 });
- 
+
 // ─── AUTO SAVE ───────────────────────────────────────────
 function maybeAutoSave() {
   if(G.frameCount-G.lastAutoSave > 1800) {
     saveGame(); G.lastAutoSave=G.frameCount;
   }
 }
- 
+
 // ─── INIT ─────────────────────────────────────────────────
 initBoids(32);
 loadGame();
 updateHUD();
- 
+
 // Accept tutorial quest by default
 (()=>{
   const tut=G.quests.find(q=>q.id==='tutorial_chain');
@@ -1604,12 +1651,12 @@ updateHUD();
   const daily2=G.quests.find(q=>q.id==='daily_commons');
   if(daily2&&!daily2.active){ daily2.active=true; daily2.stepIndex=0; daily2.progress=[0]; }
 })();
- 
+
 // Opening banner
 setTimeout(()=>{
   showEventBanner('🎣 Cast your line · SPACE/TAP to cast · Tap/SPACE to reel');
 },500);
- 
+
 // Start!
 loop();
 </script>
