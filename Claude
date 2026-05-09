@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<!-- Cordova APK: npm i -g cordova; cordova create eldritch com.eldritch app; copy this to www/index.html; cordova platform add android; cordova build android -->
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,maximum-scale=1.0,minimum-scale=1.0,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<title>Eldritch Depths: Tale Fisher</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=IM+Fell+English:ital@0;1&family=Share+Tech+Mono&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --abyss:#020408;--deep:#040d14;--mid:#071624;--surface:#0a2030;
+  --eldritch:#6b21a8;--void:#1a0530;--tentacle:#4a0e6e;
+  --gold:#c9953a;--goldhi:#f4d57e;--silver:#a8c4d0;
+  --danger:#c0392b;--success:#1a7a4a;--horror:#7c1d1d;
+  --text:#c8e8f0;--textdim:#5a8090;--white:#e8f4f8;
+  --glow1:rgba(107,33,168,0.6);--glow2:rgba(201,149,58,0.5);
+  --font-display:'Cinzel Decorative',serif;
+  --font-body:'IM Fell English',serif;
+  --font-mono:'Share Tech Mono',monospace;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--abyss);}
+body{font-family:var(--font-body);color:var(--text);cursor:crosshair;touch-action:none;}
+#canvas{display:block;width:100vw;height:100vh;image-rendering:crisp-edges;}
+#hud{
+  position:fixed;top:0;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:8px 12px;pointer-events:none;z-index:50;
+  background:linear-gradient(to bottom,rgba(2,4,8,0.95),transparent);
+}
+.hud-left,.hud-right,.hud-center{display:flex;flex-direction:column;gap:4px;}
+.hud-center{align-items:center;}
+.stat{
+  font-family:var(--font-mono);font-size:11px;color:var(--text);
+  background:rgba(2,4,8,0.7);border:1px solid rgba(201,149,58,0.3);
+  padding:3px 8px;border-radius:3px;white-space:nowrap;
+}
+.stat-bar{width:120px;height:8px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;margin-top:2px;}
+.stat-fill{height:100%;transition:width 0.3s;border-radius:4px;}
+#sanityBar .stat-fill{background:linear-gradient(90deg,#7c1d1d,#6b21a8);}
+#xpBar .stat-fill{background:linear-gradient(90deg,#c9953a,#f4d57e);}
+#sanityLabel{font-size:9px;color:var(--textdim);}
+.title-hud{font-family:var(--font-display);font-size:14px;color:var(--goldhi);text-shadow:0 0 12px var(--gold),0 0 24px rgba(107,33,168,0.8);letter-spacing:1px;}
+#btm-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  display:flex;justify-content:space-around;align-items:center;
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,rgba(2,4,8,0.98),rgba(2,4,8,0.8));
+  border-top:1px solid rgba(201,149,58,0.3);z-index:50;gap:4px;flex-wrap:wrap;
+}
+.btn{
+  font-family:var(--font-mono);font-size:10px;color:var(--goldhi);
+  background:rgba(10,20,30,0.9);border:1px solid rgba(201,149,58,0.5);
+  padding:6px 10px;border-radius:6px;cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,0.5),inset 0 1px 0 rgba(244,213,126,0.1);
+  transition:all 0.15s;user-select:none;touch-action:manipulation;
+  text-shadow:0 0 8px var(--gold);white-space:nowrap;
+}
+.btn:active,.btn:hover{background:rgba(20,40,55,0.95);border-color:var(--gold);transform:translateY(-1px);box-shadow:0 4px 12px rgba(201,149,58,0.3);}
+.btn.danger{border-color:rgba(192,57,43,0.6);color:#f07060;text-shadow:0 0 8px #c0392b;}
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(2,4,8,0.85);z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);display:none;
+}
+.modal-overlay.open{display:flex;animation:fadeIn 0.2s;}
+.modal{
+  background:linear-gradient(160deg,#0a1828,#04080f);
+  border:1px solid var(--gold);border-radius:12px;
+  padding:20px;max-width:520px;width:92%;
+  max-height:80vh;overflow-y:auto;
+  box-shadow:0 0 40px rgba(201,149,58,0.2),0 0 80px rgba(107,33,168,0.1);
+  font-family:var(--font-body);color:var(--text);
+}
+.modal h2{font-family:var(--font-display);color:var(--goldhi);font-size:16px;margin-bottom:12px;text-shadow:0 0 12px var(--gold);}
+.modal h3{font-family:var(--font-display);color:var(--silver);font-size:13px;margin:10px 0 6px;}
+.modal-close{float:right;cursor:pointer;color:var(--textdim);font-size:18px;line-height:1;}
+.modal-close:hover{color:var(--gold);}
+.quest-item{
+  background:rgba(7,22,36,0.8);border:1px solid rgba(107,33,168,0.4);
+  border-radius:8px;padding:10px;margin-bottom:8px;
+}
+.quest-item.active{border-color:rgba(201,149,58,0.5);}
+.quest-item.complete{border-color:rgba(26,122,74,0.6);opacity:0.7;}
+.quest-title{font-family:var(--font-mono);font-size:11px;color:var(--goldhi);}
+.quest-desc{font-size:11px;color:var(--textdim);margin:4px 0;}
+.progress-bar{height:6px;background:rgba(0,0,0,0.4);border-radius:3px;margin:4px 0;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--eldritch),var(--gold));border-radius:3px;transition:width 0.4s;}
+.fish-card{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(4,8,15,0.8);border:1px solid rgba(255,255,255,0.08);
+  border-radius:6px;padding:6px 8px;margin:3px 0;font-size:10px;
+  font-family:var(--font-mono);
+}
+.fish-card.undiscovered{opacity:0.35;filter:grayscale(1);}
+.rarity-common{color:#8a9ba8;}
+.rarity-uncommon{color:#4CAF50;}
+.rarity-rare{color:#2196F3;}
+.rarity-epic{color:var(--eldritch);}
+.rarity-legendary{color:var(--gold);}
+.rarity-eldritch{color:#e040fb;text-shadow:0 0 8px #e040fb;}
+.rarity-mythical{color:var(--goldhi);text-shadow:0 0 12px var(--gold),0 0 24px rgba(107,33,168,0.8);}
+#reel-overlay{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  width:min(340px,88vw);z-index:80;display:none;
+  background:rgba(2,4,8,0.95);border:1px solid var(--gold);
+  border-radius:12px;padding:14px 16px;
+  box-shadow:0 0 30px rgba(201,149,58,0.3);
+}
+#reel-overlay.active{display:block;animation:slideUp 0.2s;}
+#reel-track{height:36px;background:rgba(0,0,0,0.5);border-radius:18px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.1);}
+#reel-zone{position:absolute;top:0;height:100%;background:rgba(26,122,74,0.4);border-left:2px solid #2ecc71;border-right:2px solid #2ecc71;transition:left 0.1s,width 0.1s;}
+#reel-cursor{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:10px;height:28px;background:var(--gold);border-radius:5px;
+  box-shadow:0 0 16px var(--gold),0 0 32px rgba(201,149,58,0.5);
+  transition:left 0.04s;
+}
+#reel-label{font-family:var(--font-mono);font-size:10px;color:var(--textdim);text-align:center;margin-top:6px;}
+#reel-tension{height:6px;background:rgba(0,0,0,0.4);border-radius:3px;margin-top:6px;}
+#reel-tension-fill{height:100%;background:linear-gradient(90deg,#2ecc71,#e74c3c);border-radius:3px;transition:width 0.1s;}
+#cast-meter{
+  position:fixed;bottom:80px;right:16px;
+  width:36px;height:140px;
+  background:rgba(2,4,8,0.9);border:1px solid rgba(201,149,58,0.4);
+  border-radius:18px;display:none;overflow:hidden;
+  box-shadow:0 0 16px rgba(201,149,58,0.2);z-index:80;
+}
+#cast-meter.active{display:block;}
+#cast-meter-fill{
+  position:absolute;bottom:0;width:100%;
+  background:linear-gradient(to top,var(--gold),#e040fb);
+  transition:height 0.05s;border-radius:0 0 18px 18px;
+}
+#cast-meter-zone{
+  position:absolute;left:0;right:0;
+  background:rgba(46,204,113,0.35);border-top:2px solid #2ecc71;border-bottom:2px solid #2ecc71;
+}
+#catch-popup{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+  background:linear-gradient(160deg,#0a1828,#04080f);
+  border:2px solid var(--gold);border-radius:16px;
+  padding:22px;text-align:center;z-index:200;
+  box-shadow:0 0 60px rgba(201,149,58,0.4),0 0 120px rgba(107,33,168,0.2);
+  min-width:260px;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  font-family:var(--font-body);
+}
+#catch-popup.show{transform:translate(-50%,-50%) scale(1);}
+#catch-emoji{font-size:48px;display:block;margin-bottom:8px;}
+#catch-name{font-family:var(--font-display);font-size:16px;color:var(--goldhi);}
+#catch-rarity-text{font-size:12px;margin:4px 0;}
+#catch-stats{font-family:var(--font-mono);font-size:10px;color:var(--textdim);margin-top:8px;}
+#layer-indicator{
+  position:fixed;top:50%;left:8px;transform:translateY(-50%);
+  font-family:var(--font-mono);font-size:9px;color:var(--textdim);
+  writing-mode:vertical-rl;text-orientation:mixed;
+  background:rgba(2,4,8,0.7);padding:8px 4px;border-radius:4px;
+  border:1px solid rgba(107,33,168,0.3);pointer-events:none;z-index:50;
+}
+#event-banner{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  font-family:var(--font-display);font-size:12px;color:var(--gold);
+  background:rgba(2,4,8,0.9);border:1px solid rgba(201,149,58,0.5);
+  padding:6px 16px;border-radius:20px;pointer-events:none;z-index:60;
+  opacity:0;transition:opacity 0.4s;white-space:nowrap;
+  text-shadow:0 0 12px var(--gold);
+}
+#event-banner.show{opacity:1;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0;}to{transform:translateX(-50%) translateY(0);opacity:1;}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+@keyframes tentacleWave{0%{transform:scaleX(1);}50%{transform:scaleX(1.05);}100%{transform:scaleX(1);}}
+.shimmer{animation:pulse 2s infinite;}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+ 
+<div id="hud">
+  <div class="hud-left">
+    <div class="stat">⚓ <span id="hud-coins">0</span>💰 · Lv<span id="hud-level">1</span></div>
+    <div class="stat">🎣 <span id="hud-caught">0</span> caught</div>
+    <div class="stat" id="xpBar">XP <span id="hud-xp">0</span>/<span id="hud-xpmax">100</span><div class="stat-bar"><div class="stat-fill" id="xpFill" style="width:0%"></div></div></div>
+  </div>
+  <div class="hud-center">
+    <div class="title-hud">ELDRITCH DEPTHS</div>
+    <div class="stat" style="text-align:center;font-size:9px;" id="hud-event">Layer 1 · Open Sea</div>
+  </div>
+  <div class="hud-right" style="align-items:flex-end;">
+    <div class="stat" id="sanityBar">🧠 <span id="hud-sanity">100</span>/100<div class="stat-bar"><div class="stat-fill" id="sanityFill" style="width:100%"></div></div><div id="sanityLabel">Sanity</div></div>
+    <div class="stat">⏱ <span id="hud-time">Dawn</span></div>
+    <div class="stat">🌊 <span id="hud-weather">Calm</span></div>
+  </div>
+</div>
+ 
+<div id="layer-indicator">LAYER <span id="layer-num">1</span></div>
+<div id="event-banner" id="event-banner">⚡ EVENT</div>
+ 
+<div id="reel-overlay">
+  <div style="font-family:var(--font-display);font-size:11px;color:var(--goldhi);margin-bottom:8px;text-align:center;" id="reel-fish-name">Unknown Entity</div>
+  <div id="reel-track">
+    <div id="reel-zone"></div>
+    <div id="reel-cursor"></div>
+  </div>
+  <div id="reel-tension"><div id="reel-tension-fill" style="width:50%"></div></div>
+  <div id="reel-label">TAP / SPACE to reel · Stay in the zone</div>
+</div>
+ 
+<div id="cast-meter">
+  <div id="cast-meter-fill" style="height:0%"></div>
+  <div id="cast-meter-zone"></div>
+</div>
+ 
+<div id="catch-popup">
+  <span id="catch-emoji">🐟</span>
+  <div id="catch-name">Unknown</div>
+  <div id="catch-rarity-text"></div>
+  <div id="catch-stats"></div>
+</div>
+ 
+<div id="btm-bar">
+  <button class="btn" id="btn-quests">📜 Quests</button>
+  <button class="btn" id="btn-enc">📖 Lore</button>
+  <button class="btn" id="btn-shop">🏪 Altar</button>
+  <button class="btn" id="btn-inv">🎒 Inv</button>
+  <button class="btn" id="btn-upgrade">⚗️ Rod</button>
+  <button class="btn danger" id="btn-dive">🌊 Dive</button>
+</div>
+ 
+<!-- Modals -->
+<div class="modal-overlay" id="modal-quests">
+  <div class="modal">
+    <span class="modal-close" onclick="closeModal('modal-quests')">✕</span>
+    <h2>📜 Quest Journal</h2>
+    <div id="quest-npc-msg" style="font-style:italic;color:var(--textdim);font-size:11px;margin-bottom:12px;border-left:2px solid var(--eldritch);padding-left:8px;"></div>
+    <h3>Active</h3><div id="quest-active-list"></div>
+    <h3>Available</h3><div id="quest-available-list"></div>
+    <h3>Completed</h3><div id="quest-done-list"></div>
+  </div>
+</div>
+ 
+<div class="modal-overlay" id="modal-enc">
+  <div class="modal">
+    <span class="modal-close" onclick="closeModal('modal-enc')">✕</span>
+    <h2>📖 Eldritch Encyclopedia <span style="font-size:11px;color:var(--textdim);" id="enc-count"></span></h2>
+    <input id="enc-search" placeholder="Search entities..." style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);color:var(--text);padding:6px 10px;border-radius:6px;font-family:var(--font-mono);font-size:10px;margin-bottom:10px;">
+    <div id="enc-list"></div>
+  </div>
+</div>
+ 
+<div class="modal-overlay" id="modal-shop">
+  <div class="modal">
+    <span class="modal-close" onclick="closeModal('modal-shop')">✕</span>
+    <h2>🏪 Whispering Altar</h2>
+    <p id="shop-seer-msg" style="font-style:italic;color:var(--eldritch);font-size:11px;margin-bottom:12px;"></p>
+    <h3>Sell</h3>
+    <button class="btn" onclick="sellAll()" style="margin:3px;">💰 Sell All Fish</button>
+    <button class="btn" onclick="sellRares()" style="margin:3px;">⭐ Sell Rares+</button>
+    <h3>Buy Bait</h3>
+    <div id="shop-bait-list"></div>
+    <h3>Artifacts</h3>
+    <div id="shop-artifact-list"></div>
+  </div>
+</div>
+ 
+<div class="modal-overlay" id="modal-inv">
+  <div class="modal">
+    <span class="modal-close" onclick="closeModal('modal-inv')">✕</span>
+    <h2>🎒 Hold</h2>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--textdim);margin-bottom:8px;">
+      Coins: <span id="inv-coins" style="color:var(--gold);">0</span> · Bait: <span id="inv-bait">-</span>
+    </div>
+    <div id="inv-fish-list"></div>
+  </div>
+</div>
+ 
+<div class="modal-overlay" id="modal-upgrade">
+  <div class="modal">
+    <span class="modal-close" onclick="closeModal('modal-upgrade')">✕</span>
+    <h2>⚗️ Rod Forge</h2>
+    <div id="upgrade-list"></div>
+  </div>
+</div>
+ 
+<script>
+// ═══════════════════════════════════════════════════════════
+//  ELDRITCH DEPTHS: TALE FISHER — Full Engine
+// ═══════════════════════════════════════════════════════════
+ 
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
+ 
+window.addEventListener('resize', () => {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+});
+ 
+// ─── SAVE ────────────────────────────────────────────────
+const SAVE_KEY = 'eldritch_depths_v3';
+function saveGame() {
+  localStorage.setItem(SAVE_KEY, JSON.stringify({
+    player: { ...G.player, discoveredFish: [...G.player.discoveredFish] },
+    quests: G.quests,
+    time: G.time,
+    weather: G.weather
+  }));
+}
+function loadGame() {
+  const raw = localStorage.getItem(SAVE_KEY);
+  if (!raw) return;
+  try {
+    const s = JSON.parse(raw);
+    Object.assign(G.player, s.player);
+    G.player.discoveredFish = new Set(s.player.discoveredFish || []);
+    G.quests = s.quests || G.quests;
+    G.time = s.time || 0;
+    G.weather = s.weather || 'calm';
+  } catch(e) { console.warn('Save load failed', e); }
+}
+ 
+// ─── FISH DATABASE ───────────────────────────────────────
+const FISH = [
+  // Commons
+  {id:'mackerel',name:'Shadow Mackerel',emoji:'🐟',rarity:'common',layer:1,weight:[0.5,2],value:8,xp:5,qte:'easy',desc:'Schools of silver glinting in dim light.'},
+  {id:'tuna',name:'Midnight Tuna',emoji:'🐠',rarity:'common',layer:1,weight:[2,8],value:15,xp:8,qte:'easy',desc:'Fast-moving, prized for their dark flesh.'},
+  {id:'sardine',name:'Void Sardine',emoji:'🐟',rarity:'common',layer:1,weight:[0.2,0.8],value:5,xp:3,qte:'simple',desc:'Tiny and plentiful near the surface.'},
+  {id:'herring',name:'Abyss Herring',emoji:'🐟',rarity:'common',layer:1,weight:[0.3,1.2],value:6,xp:4,qte:'simple',desc:'Pale from living below the sunline.'},
+  {id:'anchovy',name:'Cursed Anchovy',emoji:'🐟',rarity:'common',layer:1,weight:[0.1,0.4],value:4,xp:2,qte:'simple',desc:'Their eyes seem to follow you.'},
+  {id:'cod',name:'Dreaming Cod',emoji:'🐡',rarity:'common',layer:1,weight:[1,5],value:12,xp:6,qte:'easy',desc:'Caught sleeping, dreaming of ancient things.'},
+  {id:'eel',name:'Marsh Eel',emoji:'🪱',rarity:'uncommon',layer:1,weight:[0.8,3],value:22,xp:12,qte:'easy',desc:'Writhes violently once hooked.'},
+  {id:'bass',name:'Black Bass',emoji:'🐠',rarity:'uncommon',layer:1,weight:[1.5,5],value:28,xp:15,qte:'easy',desc:'Aggressive. Has more teeth than it should.'},
+  {id:'pike',name:'Plague Pike',emoji:'🐊',rarity:'uncommon',layer:1,weight:[3,10],value:35,xp:20,qte:'medium',desc:'Its scales carry a faint luminescent rot.'},
+  {id:'grouper',name:'Mist Grouper',emoji:'🐡',rarity:'uncommon',layer:1,weight:[5,18],value:45,xp:25,qte:'medium',desc:'Emerges from fog banks. Origin unclear.'},
+  // Rares
+  {id:'anglerfish',name:'Deep Anglerfish',emoji:'👾',rarity:'rare',layer:2,weight:[4,15],value:90,xp:50,qte:'medium',desc:'Its lure pulses with hypnotic light. Sanity -5 on catch.',sanityDrain:5},
+  {id:'viperfish',name:'Viperfish',emoji:'👾',rarity:'rare',layer:2,weight:[1,4],value:80,xp:45,qte:'medium',desc:'Teeth longer than its body. Made no sense until you saw one.',sanityDrain:3},
+  {id:'oarfish',name:'Oarfish',emoji:'🐍',rarity:'rare',layer:2,weight:[20,60],value:110,xp:60,qte:'hard',desc:'Ancient sea-serpent. Its screech echoes in your dreams.',sanityDrain:8},
+  {id:'leafy',name:'Leafy Seadragon',emoji:'🌿',rarity:'rare',layer:2,weight:[0.5,2],value:95,xp:55,qte:'medium',desc:'Beautiful. Wrong. Its leaves breathe.'},
+  {id:'goblinshark',name:'Goblin Shark',emoji:'🦈',rarity:'rare',layer:2,weight:[15,40],value:120,xp:70,qte:'hard',desc:'The jaw extends beyond the face. Where does the face end?',sanityDrain:5},
+  // Epics
+  {id:'colossal',name:'Colossal Squid',emoji:'🦑',rarity:'epic',layer:3,weight:[80,250],value:400,xp:200,qte:'hard',desc:'Its eye is the size of a dinner plate. It watches you back.',sanityDrain:15},
+  {id:'submarx',name:'Sunken Leviathan',emoji:'🐋',rarity:'epic',layer:3,weight:[200,600],value:800,xp:400,qte:'hard',desc:'Not a whale. Something wearing the memory of a whale.',sanityDrain:20},
+  {id:'oceanmanta',name:'Void Manta',emoji:'🦅',rarity:'epic',layer:3,weight:[100,350],value:600,xp:300,qte:'hard',desc:'Glides without moving its wings. Physics weeps.',sanityDrain:12},
+  // Eldritch
+  {id:'deepone',name:'Deep One',emoji:'🐸',rarity:'eldritch',layer:2,weight:[30,80],value:500,xp:300,qte:'hard',desc:'Half man, half fish, all wrong. It mumbles in your language.',sanityDrain:25,eldritch:true},
+  {id:'starspawn',name:'Starspawn',emoji:'⭐',rarity:'eldritch',layer:3,weight:[50,120],value:900,xp:500,qte:'hard',desc:'Tentacles arranged like constellations. The stars it came from are dead.',sanityDrain:30,eldritch:true},
+  {id:'migo',name:"Mi-Go (Fungi-Brain)",emoji:'🍄',rarity:'eldritch',layer:3,weight:[20,60],value:700,xp:400,qte:'hard',desc:"Buzzes with alien intelligence. Don't let it speak.",sanityDrain:35,eldritch:true},
+  {id:'shoggoth',name:'Shoggoth',emoji:'🫧',rarity:'eldritch',layer:4,weight:[400,1000],value:2000,xp:1000,qte:'boss',desc:'Tekeli-li! Tekeli-li! It reshapes itself mid-fight.',sanityDrain:50,eldritch:true},
+  {id:'nightgaunt',name:'Nightgaunt',emoji:'🦇',rarity:'eldritch',layer:3,weight:[15,40],value:600,xp:350,qte:'hard',desc:'Faceless. Wings of membrane. It tickles you. You hate it.',sanityDrain:30,eldritch:true},
+  {id:'formless',name:'Formless Spawn',emoji:'🕳️',rarity:'eldritch',layer:3,weight:[60,200],value:800,xp:450,qte:'hard',desc:'Black ooze that forms faces. Each face is someone you know.',sanityDrain:40,eldritch:true},
+  {id:'bgnuthun',name:"B'gnu-Thun",emoji:'🌲',rarity:'eldritch',layer:4,weight:[300,700],value:1500,xp:800,qte:'boss',desc:'A tentacle tree. Its roots reach into parallel oceans.',sanityDrain:45,eldritch:true},
+  {id:'bokrug',name:'Bokrug',emoji:'🦎',rarity:'eldritch',layer:3,weight:[100,300],value:1000,xp:600,qte:'hard',desc:'The Water Lizard Idol. Its worshippers drew it. They were right.',sanityDrain:35,eldritch:true},
+  {id:'shambler',name:'Dimensional Shambler',emoji:'🐻',rarity:'eldritch',layer:4,weight:[80,200],value:1200,xp:700,qte:'boss',desc:'Leaps between dimensions. You caught it mid-jump.',sanityDrain:45,eldritch:true},
+  {id:'ghatanothoa',name:'Ghatanothoa',emoji:'💀',rarity:'eldritch',layer:5,weight:[500,1500],value:3000,xp:1500,qte:'boss',desc:'Looking at its true face petrifies. You fished it in the dark.',sanityDrain:60,eldritch:true},
+  {id:'colourspace',name:'Colour Out of Space',emoji:'🌈',rarity:'eldritch',layer:4,weight:[0,0],value:2500,xp:1200,qte:'boss',desc:'Not a colour you know. Not a colour that should exist.',sanityDrain:55,eldritch:true},
+  {id:'tsathoggua',name:'Tsathoggua',emoji:'🐸',rarity:'eldritch',layer:4,weight:[200,500],value:2200,xp:1100,qte:'boss',desc:"The Toad-God. Impossibly lazy. Impossibly old. It's judging you.",sanityDrain:50,eldritch:true},
+  {id:'houndstin',name:'Hound of Tindalos',emoji:'🐕',rarity:'eldritch',layer:3,weight:[25,70],value:900,xp:500,qte:'hard',desc:'Hunts through angles. There are no right angles in the ocean.',sanityDrain:40,eldritch:true},
+  {id:'elderthing',name:'Elder Thing',emoji:'⭐',rarity:'eldritch',layer:4,weight:[150,400],value:1800,xp:900,qte:'boss',desc:'Starfish-headed Ancient. It built the first city. It is not impressed by yours.',sanityDrain:45,eldritch:true},
+  {id:'yithian',name:'Yithian',emoji:'🔮',rarity:'eldritch',layer:4,weight:[100,250],value:1600,xp:850,qte:'boss',desc:"Body-swapper. You feel it reading your memories. Don't let it finish.",sanityDrain:50,eldritch:true},
+  {id:'flyingpolyp',name:'Flying Polyp',emoji:'💨',rarity:'eldritch',layer:5,weight:[0,0],value:3500,xp:1800,qte:'boss',desc:'Invisible wind horrors. You can only feel the line tug.',sanityDrain:60,eldritch:true},
+  {id:'ygolonac',name:"Y'golonac",emoji:'👐',rarity:'eldritch',layer:5,weight:[300,800],value:4000,xp:2000,qte:'boss',desc:'Mouths in the palms. It reads what you wrote. It knows you.',sanityDrain:70,eldritch:true},
+  // Mythical Tale Fish (Quest-Locked)
+  {id:'tale_voidfin',name:'Tale Voidfin',emoji:'🌀',rarity:'mythical',layer:3,weight:[100,300],value:5000,xp:3000,qte:'boss',desc:'A fish from before water existed. Quest-caught only.',sanityDrain:20,mythical:true,questLocked:'deep_one_chain'},
+  {id:'tale_starwhisper',name:'Tale Starwhisper',emoji:'✨',rarity:'mythical',layer:4,weight:[200,500],value:8000,xp:5000,qte:'boss',desc:'Carries stars in its scales. Each scale is a dead galaxy.',sanityDrain:25,mythical:true,questLocked:'cthulhu_prep'},
+  {id:'tale_shoggoth',name:'Tale Shoggoth Essence',emoji:'💠',rarity:'mythical',layer:4,weight:[600,1500],value:10000,xp:6000,qte:'boss',desc:'Concentrated shoggoth. Reels like fighting a nightmare.',sanityDrain:40,mythical:true,questLocked:'shoggoth_hunt'},
+  {id:'tale_yithian',name:'Tale Yithian Mindflayer',emoji:'🧠',rarity:'mythical',layer:4,weight:[150,400],value:9000,xp:5500,qte:'boss',desc:'Its mind bleeds into yours. Worth every sanity point.',sanityDrain:35,mythical:true,questLocked:'yithian_quest'},
+  {id:'tale_minnow',name:'Tale Minnow',emoji:'🔮',rarity:'mythical',layer:1,weight:[0.5,2],value:2000,xp:1500,qte:'medium',desc:'First step on the mythical path. Small but ancient beyond measure.',sanityDrain:5,mythical:true,questLocked:'tutorial_chain'},
+  {id:'tale_leviathan',name:'Tale Leviathan',emoji:'🐉',rarity:'mythical',layer:5,weight:[2000,5000],value:25000,xp:15000,qte:'boss',desc:'The final catch. The ocean itself. Your rod was made for this.',sanityDrain:60,mythical:true,questLocked:'cthulhu_awakening'},
+  {id:'tale_gygangoros',name:'Tale Gygangoros Scale',emoji:'🦟',rarity:'mythical',layer:4,weight:[400,1200],value:12000,xp:7000,qte:'boss',desc:'A hornet-dragon leviathan. Its wings make hurricanes.',sanityDrain:45,mythical:true,questLocked:'deep_dive_quest'},
+  {id:'tale_colourspace',name:'Tale Colour Incarnate',emoji:'🎨',rarity:'mythical',layer:5,weight:[0,0],value:20000,xp:12000,qte:'boss',desc:'The colour fully manifested. It rewrites what colour means.',sanityDrain:55,mythical:true,questLocked:'colour_quest'},
+  {id:'poseidon_guard',name:"Poseidon's Last Guard",emoji:'🔱',rarity:'mythical',layer:5,weight:[800,2000],value:30000,xp:20000,qte:'boss',desc:'The god is dead. This was its champion. It still fights.',sanityDrain:50,mythical:true,questLocked:'poseidon_quest'},
+  {id:'cthulhu_fry',name:'Cthulhu Fry',emoji:'🐙',rarity:'mythical',layer:5,weight:[1000,3000],value:50000,xp:30000,qte:'boss',desc:"Ph'nglui mglw'nafh. You caught IT. The sleeping one stirs.",sanityDrain:80,mythical:true,questLocked:'cthulhu_final'},
+];
+ 
+// ─── QUESTS ──────────────────────────────────────────────
+const QUEST_DEFS = [
+  {
+    id:'tutorial_chain',name:'First Descent',chain:true,
+    steps:[
+      {desc:'Catch 5 Shadow Mackerel',type:'catch',fishId:'mackerel',amount:5},
+      {desc:'Craft Glowbait (buy from altar)',type:'buy_bait',baitId:'glowbait',amount:1},
+      {desc:'Catch the Tale Minnow (bait active)',type:'catch_mythical',fishId:'tale_minnow',amount:1},
+    ],
+    rewards:[{coins:500,xp:1000,bait:{id:'glowbait',amount:3},mythical:'tale_minnow'}],
+    desc:'Every legend begins with a first cast.',npcHint:'"Cast, young one. The abyss has been waiting."'
+  },
+  {
+    id:'deep_one_chain',name:'Deep One Covenant',chain:true,
+    steps:[
+      {desc:'Catch 10 Deep Ones',type:'catch',fishId:'deepone',amount:10},
+      {desc:'Craft Abyssal Lure (buy from altar)',type:'buy_bait',baitId:'abyssal_lure',amount:1},
+      {desc:'Survive Dagon Minion Fight (catch any Eldritch boss)',type:'catch_eldritch',amount:1},
+      {desc:'Cast with Abyssal Lure in Layer 3',type:'catch_mythical',fishId:'tale_voidfin',amount:1},
+    ],
+    rewards:[{coins:3000,xp:5000,mythical:'tale_voidfin',artifact:'deepone_scale'}],
+    layer:2,desc:'Commune with the Deep. Become something other.',npcHint:'"Their blood calls to the Voidfin. Feed the call."'
+  },
+  {
+    id:'cthulhu_prep',name:'Cthulhu Preparation',chain:true,
+    steps:[
+      {desc:'Collect 3 Elder Signs (catch Elder Things)',type:'catch',fishId:'elderthing',amount:3},
+      {desc:'Survive a Sanity Trial (reel while sanity < 30)',type:'sanity_trial',amount:1},
+      {desc:'Catch 5 Starspawn',type:'catch',fishId:'starspawn',amount:5},
+      {desc:'Unlock the Starwhisper',type:'catch_mythical',fishId:'tale_starwhisper',amount:1},
+    ],
+    rewards:[{coins:8000,xp:10000,mythical:'tale_starwhisper',artifact:'cthulhu_fang'}],
+    layer:3,desc:'Prepare for the Dreaming God.',npcHint:'"The stars are right. Are you?"'
+  },
+  {
+    id:'shoggoth_hunt',name:'Shoggoth Protocol',chain:true,
+    steps:[
+      {desc:'Catch 20 Formless Spawn',type:'catch',fishId:'formless',amount:20},
+      {desc:'Buy Slime Bait from altar',type:'buy_bait',baitId:'slimebait',amount:1},
+      {desc:'Catch 3 Shoggoths',type:'catch',fishId:'shoggoth',amount:3},
+      {desc:'Extract Tale Shoggoth Essence',type:'catch_mythical',fishId:'tale_shoggoth',amount:1},
+    ],
+    rewards:[{coins:12000,xp:15000,mythical:'tale_shoggoth',artifact:'shoggoth_ink'}],
+    layer:4,desc:'They adapt. So must you.',npcHint:'"Tekeli-li. You know what that means now."'
+  },
+  {
+    id:'cthulhu_awakening',name:"Cthulhu's Awakening",chain:true,
+    steps:[
+      {desc:"Complete Deep One Covenant first",type:'quest_done',questId:'deep_one_chain',amount:1},
+      {desc:"Complete Cthulhu Preparation first",type:'quest_done',questId:'cthulhu_prep',amount:1},
+      {desc:"Catch Ghatanothoa (sanity below 50)",type:'catch',fishId:'ghatanothoa',amount:1},
+      {desc:"Reel the Tale Leviathan",type:'catch_mythical',fishId:'tale_leviathan',amount:1},
+    ],
+    rewards:[{coins:30000,xp:40000,mythical:'tale_leviathan',artifact:'rod_of_endings'}],
+    layer:5,desc:'The final reckoning. Ph\'nglui mglw\'nafh.',npcHint:'"He stirs. Catch him before he wakes fully."'
+  },
+  {
+    id:'yithian_quest',name:'Yithian Mind Exchange',chain:true,
+    steps:[
+      {desc:'Catch 5 Yithians',type:'catch',fishId:'yithian',amount:5},
+      {desc:'Read 20 encyclopedia entries',type:'lore_read',amount:20},
+      {desc:'Survive 3 boss reels',type:'boss_reel',amount:3},
+      {desc:'Extract the Mindflayer',type:'catch_mythical',fishId:'tale_yithian',amount:1},
+    ],
+    rewards:[{coins:10000,xp:12000,mythical:'tale_yithian',artifact:'yithian_cone'}],
+    layer:4,desc:'Trade minds. The Yithians will not be pleased.',npcHint:'"Your mind has secrets worth stealing."'
+  },
+  {
+    id:'deep_dive_quest',name:'Abyssal Descent',chain:true,
+    steps:[
+      {desc:'Reach Layer 4',type:'reach_layer',amount:4},
+      {desc:'Catch one of each Epic fish',type:'catch_all_epic',amount:1},
+      {desc:'Catch 5 Elder Things',type:'catch',fishId:'elderthing',amount:5},
+      {desc:'Reel the Gygangoros Scale',type:'catch_mythical',fishId:'tale_gygangoros',amount:1},
+    ],
+    rewards:[{coins:15000,xp:18000,mythical:'tale_gygangoros',artifact:'hornet_wing'}],
+    layer:4,desc:'The hornet-dragon waits in deep channels.',npcHint:'"Its wingspan spans three storms. Bring a long line."'
+  },
+  {
+    id:'colour_quest',name:'Colour From Beyond',chain:true,
+    steps:[
+      {desc:'Catch 3 Colours Out of Space',type:'catch',fishId:'colourspace',amount:3},
+      {desc:'Lose 50 total sanity from eldritch catches',type:'sanity_lost',amount:50},
+      {desc:'Craft Prismatic Bait (buy from altar)',type:'buy_bait',baitId:'prism_bait',amount:1},
+      {desc:'Manifest the Colour Incarnate',type:'catch_mythical',fishId:'tale_colourspace',amount:1},
+    ],
+    rewards:[{coins:22000,xp:25000,mythical:'tale_colourspace',artifact:'colour_vial'}],
+    layer:5,desc:'Perceive the unperceivable.',npcHint:'"Close your eyes. Now describe what you see."'
+  },
+  {
+    id:'poseidon_quest',name:"Poseidon's Remnant",chain:true,
+    steps:[
+      {desc:'Catch 10 Flying Polyps',type:'catch',fishId:'flyingpolyp',amount:10},
+      {desc:"Complete Cthulhu's Awakening",type:'quest_done',questId:'cthulhu_awakening',amount:1},
+      {desc:'Craft Divine Bait (buy from altar)',type:'buy_bait',baitId:'divine_bait',amount:1},
+      {desc:"Hook the Last Guard",type:'catch_mythical',fishId:'poseidon_guard',amount:1},
+    ],
+    rewards:[{coins:40000,xp:50000,mythical:'poseidon_guard',artifact:'trident_fragment'}],
+    layer:5,desc:'The old gods fall. Their servants do not.',npcHint:'"A dead god\'s champion still fights."'
+  },
+  {
+    id:'cthulhu_final',name:"Ph'nglui — The Final Dream",chain:true,
+    steps:[
+      {desc:'Complete all other quest chains',type:'all_quests_done',amount:7},
+      {desc:'Achieve 500 total catches',type:'total_catches',amount:500},
+      {desc:'Reach full sanity loss (survive at 0)',type:'zero_sanity',amount:1},
+      {desc:'Awaken Cthulhu Fry',type:'catch_mythical',fishId:'cthulhu_fry',amount:1},
+    ],
+    rewards:[{coins:100000,xp:100000,mythical:'cthulhu_fry',artifact:'dread_crown'}],
+    layer:5,desc:"Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.",npcHint:'"You have gone far enough. Turn back." (Do not turn back.)'
+  },
+  // Daily repeatable
+  {
+    id:'daily_void',name:'Daily Void Whisper',repeatable:true,dailyCooldown:true,
+    steps:[{desc:'Catch 1 eldritch entity',type:'catch_eldritch',amount:1}],
+    rewards:[{coins:300,xp:500,bait:{id:'glowbait',amount:2}}],
+    desc:'The void whispers daily boons.',npcHint:'"The void calls every tide."'
+  },
+  {
+    id:'daily_commons',name:'Surface Harvest',repeatable:true,dailyCooldown:true,
+    steps:[{desc:'Catch 15 common fish',type:'catch_rarity',rarity:'common',amount:15}],
+    rewards:[{coins:150,xp:200,bait:{id:'basic_bait',amount:5}}],
+    desc:'The surface still yields.',npcHint:'"Even the small ones feed the deep."'
+  },
+  {
+    id:'daily_rare',name:'Rare Tide Run',repeatable:true,dailyCooldown:true,
+    steps:[{desc:'Catch 5 rare fish',type:'catch_rarity',rarity:'rare',amount:5}],
+    rewards:[{coins:500,xp:800}],
+    desc:"The rare tides run once per day.",npcHint:'"Watch the tide charts. Watch for the red."'
+  },
+];
+ 
+// ─── SHOP ────────────────────────────────────────────────
+const BAIT_SHOP = [
+  {id:'basic_bait',name:'Basic Bait',cost:10,desc:'Common fish only.',emoji:'🪱'},
+  {id:'glowbait',name:'Glowbait',cost:80,desc:'Attracts eldritch. +30% eldritch rate.',emoji:'✨'},
+  {id:'abyssal_lure',name:'Abyssal Lure',cost:300,desc:'Required for Voidfin quest. +50% rare.',emoji:'💀'},
+  {id:'slimebait',name:'Slime Bait',cost:250,desc:'Shoggoth lure. Required for Shoggoth quest.',emoji:'🫧'},
+  {id:'prism_bait',name:'Prismatic Bait',cost:400,desc:'Colour quest bait. Reality-adjacent.',emoji:'🌈'},
+  {id:'divine_bait',name:'Divine Bait',cost:1000,desc:'For gods. Required: Poseidon quest.',emoji:'🔱'},
+  {id:'deep_bait',name:'Depth Bait',cost:150,desc:'Boosts abyss layer fish. +60% deep fish.',emoji:'🕳️'},
+  {id:'sanity_bait',name:'Sanity Bait',cost:200,desc:'+20 sanity on catch. Use wisely.',emoji:'🧠'},
+];
+ 
+const ROD_UPGRADES = [
+  {id:'rod_strength',name:'Rod Strength',maxLevel:10,baseCost:100,desc:'Wider reel zone. (+5% per level)',stat:'reelWidth'},
+  {id:'rod_speed',name:'Reel Speed',maxLevel:8,baseCost:150,desc:'Slower cursor. (-0.1 speed per level)',stat:'reelSpeed'},
+  {id:'rod_sanity',name:'Sanity Resist',maxLevel:10,baseCost:200,desc:'-10% sanity drain per level.',stat:'sanityResist'},
+  {id:'rod_luck',name:'Deep Luck',maxLevel:8,baseCost:250,desc:'+5% rare fish chance per level.',stat:'luckBonus'},
+  {id:'rod_xp',name:'XP Multiplier',maxLevel:5,baseCost:300,desc:'+20% XP per catch per level.',stat:'xpMult'},
+  {id:'rod_auto',name:'Auto-Reel',maxLevel:1,baseCost:2000,desc:'Auto-reels 30% of easy fish.',stat:'autoReel'},
+];
+ 
+// ─── GAME STATE ──────────────────────────────────────────
+const G = {
+  player: {
+    coins: 150, xp: 0, level: 1, xpThreshold: 100,
+    sanity: 100, maxSanity: 100,
+    layer: 1, catches: 0,
+    inventory: [],
+    bait: [{id:'basic_bait',amount:10}],
+    activeBait: 'basic_bait',
+    upgrades: {},
+    discoveredFish: new Set(),
+    artifacts: [],
+    sanityLostTotal: 0,
+    loreRead: 0,
+    bossReelsWon: 0,
+    questProgress: {},
+    dailyCooldowns: {},
+  },
+  quests: QUEST_DEFS.map(q => ({
+    id:q.id, stepIndex:0, active:false, done:false,
+    progress: q.steps ? q.steps.map(()=>0) : [0]
+  })),
+  time: 0,
+  weather: 'calm',
+  weatherTimer: 0,
+  boids: [],
+  particles: [],
+  floats: [],
+  state: 'idle', // idle, casting, waiting, reeling, caught
+  castPower: 0,
+  castDir: 1,
+  castTarget: null,
+  castLine: null,
+  bobber: null,
+  fishOnLine: null,
+  biteTimer: 0,
+  reel: null,
+  screenShake: 0,
+  glitch: false,
+  waveTime: 0,
+  frameCount: 0,
+  lastAutoSave: 0,
+  questMythicalReady: null, // fish id unlocked from quest
+  eventBanner: '',
+  eventBannerTimer: 0,
+};
+ 
+// ─── UPGRADE HELPERS ─────────────────────────────────────
+function getUpgradeLevel(id) { return G.player.upgrades[id] || 0; }
+function upgradeCost(id) {
+  const def = ROD_UPGRADES.find(r=>r.id===id);
+  if(!def) return 9999;
+  const lv = getUpgradeLevel(id);
+  return Math.floor(def.baseCost * Math.pow(1.6, lv));
+}
+function getReelZoneWidth() { return 25 + getUpgradeLevel('rod_strength') * 5; }
+function getReelCursorSpeed() { return Math.max(0.3, 1.8 - getUpgradeLevel('rod_speed') * 0.1); }
+function getSanityResist() { return 1 - getUpgradeLevel('rod_sanity') * 0.08; }
+function getLuckBonus() { return 1 + getUpgradeLevel('rod_luck') * 0.05; }
+function getXpMult() { return 1 + getUpgradeLevel('rod_xp') * 0.2; }
+ 
+// ─── BOIDS ───────────────────────────────────────────────
+function initBoids(n=30) {
+  G.boids = [];
+  for(let i=0;i<n;i++) {
+    G.boids.push({
+      x: Math.random()*W, y: H*0.3 + Math.random()*H*0.5,
+      vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*0.8,
+      id: FISH[Math.floor(Math.random()*8)].id,
+      size: 4+Math.random()*6, angle:0, wobble:Math.random()*Math.PI*2
+    });
+  }
+}
+ 
+function updateBoids() {
+  const sep=25,ali=80,coh=100,maxSpeed=2,avoidR=120;
+  const lure = G.bobber;
+  for(const b of G.boids) {
+    let sx=0,sy=0,ax=0,ay=0,cx=0,cy=0,cn=0;
+    for(const o of G.boids) {
+      if(o===b) continue;
+      const dx=b.x-o.x,dy=b.y-o.y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<sep&&d>0){sx+=dx/d;sy+=dy/d;}
+      if(d<ali){ax+=o.vx;ay+=o.vy;cn++;}
+      if(d<coh){cx+=o.x;cy+=o.y;}
+    }
+    if(cn>0){ax/=cn;ay/=cn;cx=cx/cn-b.x;cy=cy/cn-b.y;}
+    // Lure attraction
+    if(lure){
+      const dx=lure.x-b.x,dy=lure.y-b.y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<avoidR){ax+=dx/d*0.5;ay+=dy/d*0.5;}
+    }
+    b.vx += sx*0.03 + ax*0.02 + cx*0.01;
+    b.vy += sy*0.03 + ay*0.02 + cy*0.01;
+    const speed=Math.sqrt(b.vx*b.vx+b.vy*b.vy);
+    if(speed>maxSpeed){b.vx=b.vx/speed*maxSpeed;b.vy=b.vy/speed*maxSpeed;}
+    b.x+=b.vx; b.y+=b.vy;
+    b.wobble+=0.12;
+    b.angle=Math.atan2(b.vy,b.vx);
+    if(b.x<-20) b.x=W+20;
+    if(b.x>W+20) b.x=-20;
+    b.y=Math.max(H*0.22,Math.min(H*0.88,b.y));
+  }
+}
+ 
+// ─── PARTICLES ───────────────────────────────────────────
+function spawnParticles(x,y,n,color,type='splash') {
+  for(let i=0;i<n;i++) {
+    G.particles.push({
+      x,y,
+      vx:(Math.random()-0.5)*(type==='gore'?6:3),
+      vy:-(Math.random()*(type==='gore'?4:2)+1),
+      life:1, size:type==='gore'?3+Math.random()*5:2+Math.random()*3,
+      color, type
+    });
+  }
+}
+function floatText(x,y,text,color='#f4d57e',size=14) {
+  G.floats.push({x,y,text,color,size,life:1,vy:-0.7});
+}
+ 
+// ─── WEATHER ─────────────────────────────────────────────
+const WEATHERS = ['calm','calm','calm','rain','fog','storm','aurora','storm'];
+function tickWeather() {
+  G.weatherTimer++;
+  if(G.weatherTimer > 600+Math.random()*600) {
+    G.weather = WEATHERS[Math.floor(Math.random()*WEATHERS.length)];
+    G.weatherTimer=0;
+    G.time = G.time; // keep time
+  }
+}
+ 
+// ─── FISH SELECTION ──────────────────────────────────────
+function selectFish() {
+  const bait = G.player.activeBait;
+  const layer = G.player.layer;
+  const night = G.time > 0.5;
+  const storm = G.weather === 'storm';
+  const fog = G.weather === 'fog';
+  const aurora = G.weather === 'aurora';
+ 
+  // Check if a mythical is ready from quest
+  if(G.questMythicalReady) {
+    const f = FISH.find(f=>f.id===G.questMythicalReady);
+    if(f) { G.questMythicalReady=null; return f; }
+  }
+ 
+  let pool = FISH.filter(f => {
+    if(f.mythical) return false; // only via quest
+    if(f.layer > layer) return false;
+    return true;
+  });
+ 
+  const weights = pool.map(f => {
+    let w = {
+      common: 100, uncommon:40, rare:15, epic:5, eldritch:2
+    }[f.rarity] || 2;
+ 
+    // Bait modifiers
+    if(bait==='glowbait' && f.eldritch) w *= 3;
+    if(bait==='abyssal_lure' && f.rarity==='eldritch') w *= 2;
+    if(bait==='slimebait' && f.id==='shoggoth') w *= 8;
+    if(bait==='deep_bait' && f.layer>=3) w *= 2.5;
+    if(bait==='prism_bait' && f.id==='colourspace') w *= 8;
+ 
+    // Weather modifiers
+    if(storm && f.eldritch) w *= 2.5;
+    if(aurora && f.rarity==='epic') w *= 2;
+    if(fog && f.rarity==='rare') w *= 1.8;
+    if(night && ['anglerfish','viperfish','goblinshark','nightgaunt'].includes(f.id)) w *= 3;
+ 
+    // Layer bonus
+    if(f.layer === layer) w *= 1.5;
+ 
+    // Luck
+    w *= getLuckBonus();
+ 
+    return { f, w };
+  });
+ 
+  let total = weights.reduce((s,i)=>s+i.w,0);
+  let r = Math.random()*total;
+  for(const {f,w} of weights) {
+    r-=w; if(r<=0) return f;
+  }
+  return pool[0];
+}
+ 
+// ─── REEL ────────────────────────────────────────────────
+function startReel(fish) {
+  G.state = 'reeling';
+  const speed = getReelCursorSpeed();
+  const zoneW = getReelZoneWidth();
+  let difficulty = {simple:1,easy:1.2,medium:1.5,hard:2.0,boss:2.8}[fish.qte]||1;
+  if(fish.rarity==='eldritch'||fish.rarity==='mythical') difficulty*=1.3;
+  G.reel = {
+    fish,
+    cursor:15, dir:1,
+    speed: speed * difficulty,
+    zoneStart: 30,
+    zoneEnd: 30+zoneW,
+    progress:50,
+    tension:50,
+    phase:0, // 0=normal, 1=tentacle dodge, 2=sanity wave
+    phaseTimer:0,
+    maxProgress:100,
+    failed:false
+  };
+  const zoneEl = document.getElementById('reel-zone');
+  zoneEl.style.left = G.reel.zoneStart+'%';
+  zoneEl.style.width = (G.reel.zoneEnd-G.reel.zoneStart)+'%';
+  document.getElementById('reel-fish-name').textContent = fish.name;
+  document.getElementById('reel-overlay').classList.add('active');
+  G.glitch = fish.eldritch || fish.mythical;
+}
+ 
+function tickReel() {
+  if(!G.reel) return;
+  const r = G.reel;
+  r.cursor += r.speed * r.dir;
+  if(r.cursor>=95){r.dir=-1;}
+  if(r.cursor<=5){r.dir=1;}
+  r.progress -= 0.12;
+  r.tension += (Math.random()-0.48)*0.5;
+  r.tension = Math.max(10,Math.min(90,r.tension));
+  r.phaseTimer++;
+  if((r.fish.qte==='boss'||r.fish.rarity==='eldritch') && r.phaseTimer>180) {
+    r.phase = (r.phase+1)%3;
+    r.phaseTimer=0;
+    if(r.phase===1) {
+      r.zoneStart = 10+Math.random()*40;
+      r.zoneEnd = r.zoneStart + getReelZoneWidth()*0.7;
+      floatText(W/2,H/2,'⚠️ DODGE!','#e74c3c',16);
+      document.getElementById('reel-zone').style.left=r.zoneStart+'%';
+      document.getElementById('reel-zone').style.width=(r.zoneEnd-r.zoneStart)+'%';
+    } else if(r.phase===2) {
+      drainSanity(5*getSanityResist());
+      floatText(W/2,H/2-20,'🧠 SANITY WAVE','#e040fb',14);
+    }
+  }
+  if(r.progress<=0) { reelFail(); return; }
+  document.getElementById('reel-cursor').style.left=r.cursor+'%';
+  document.getElementById('reel-tension-fill').style.width=r.tension+'%';
+  document.getElementById('reel-overlay').querySelector('#reel-tension-fill').style.background =
+    r.tension>70 ? 'linear-gradient(90deg,#e74c3c,#c0392b)' : 'linear-gradient(90deg,#2ecc71,#e74c3c)';
+}
+ 
+function reelHook() {
+  if(!G.reel) return;
+  const r=G.reel;
+  const inZone = r.cursor>=r.zoneStart && r.cursor<=r.zoneEnd;
+  if(inZone) {
+    r.progress=Math.min(r.maxProgress,r.progress+18);
+    spawnParticles(W/2,H*0.5,8,'#2ecc71','splash');
+    floatText(W/2,H*0.45,'✓',  '#2ecc71',18);
+    if(r.progress>=r.maxProgress) reelSuccess();
+  } else {
+    r.progress-=12;
+    G.screenShake=6;
+    floatText(W/2,H*0.45,'✗','#e74c3c',18);
+    if(r.progress<=0) reelFail();
+  }
+  document.getElementById('reel-overlay').querySelector('#reel-tension-fill').style.width=r.tension+'%';
+}
+ 
+function reelSuccess() {
+  const fish = G.reel.fish;
+  document.getElementById('reel-overlay').classList.remove('active');
+  G.reel=null; G.state='caught'; G.glitch=false;
+  catchFish(fish);
+  if(fish.qte==='boss'||fish.rarity==='eldritch'||fish.rarity==='mythical') {
+    G.player.bossReelsWon++;
+    updateQuestProgress('boss_reel',1);
+  }
+}
+ 
+function reelFail() {
+  document.getElementById('reel-overlay').classList.remove('active');
+  G.reel=null; G.state='idle'; G.fishOnLine=null; G.bobber=null; G.glitch=false;
+  floatText(W/2,H*0.4,'💨 Escaped!','#e74c3c',16);
+  G.screenShake=10;
+  drainSanity(3);
+}
+ 
+// ─── SANITY ──────────────────────────────────────────────
+function drainSanity(amount) {
+  const actual = amount * getSanityResist();
+  G.player.sanity = Math.max(0, G.player.sanity - actual);
+  G.player.sanityLostTotal += actual;
+  updateQuestProgress('sanity_lost', actual);
+  if(G.player.sanity <= 0) {
+    updateQuestProgress('zero_sanity', 1);
+    showEventBanner('🧠 SANITY SHATTERED — The Void Speaks');
+    G.player.sanity=5; // survive, barely
+  }
+}
+ 
+function regenSanity(amount) {
+  G.player.sanity = Math.min(G.player.maxSanity, G.player.sanity+amount);
+}
+ 
+// ─── CATCH ───────────────────────────────────────────────
+function catchFish(fish) {
+  const w1 = fish.weight[0], w2 = fish.weight[1];
+  const weight = w1===0&&w2===0 ? 0 : +(w1 + Math.random()*(w2-w1)).toFixed(1);
+  const xpGain = Math.floor(fish.xp * getXpMult());
+ 
+  G.player.catches++;
+  G.player.coins += fish.value;
+  G.player.xp += xpGain;
+  G.player.inventory.push({fish:fish.id, weight, value:fish.value, caught:Date.now()});
+  G.player.discoveredFish.add(fish.id);
+ 
+  if(fish.sanityDrain) drainSanity(fish.sanityDrain);
+  else regenSanity(2);
+ 
+  // Level up
+  while(G.player.xp >= G.player.xpThreshold) {
+    G.player.xp -= G.player.xpThreshold;
+    G.player.level++;
+    G.player.xpThreshold = Math.floor(G.player.xpThreshold * 1.5);
+    floatText(W/2, H/3, `✨ LEVEL ${G.player.level}!`, '#f4d57e', 20);
+    showEventBanner(`⬆️ Level ${G.player.level}!`);
+    // Unlock layers with levels
+    if(G.player.level>=5 && G.player.layer<2) unlockLayer(2);
+    if(G.player.level>=15 && G.player.layer<3) unlockLayer(3);
+    if(G.player.level>=30 && G.player.layer<4) unlockLayer(4);
+    if(G.player.level>=50 && G.player.layer<5) unlockLayer(5);
+  }
+ 
+  updateQuestProgress('catch', fish.id, 1);
+  updateQuestProgress('catch_rarity', fish.rarity, 1);
+  if(fish.eldritch) updateQuestProgress('catch_eldritch', null, 1);
+  if(fish.mythical) updateQuestProgress('catch_mythical', fish.id, 1);
+  updateQuestProgress('total_catches', null, 1);
+ 
+  // Show catch popup
+  showCatchPopup(fish, weight, xpGain);
+  spawnParticles(W/2, H*0.4, 20, fish.eldritch ? '#e040fb' : '#2ecc71', fish.eldritch ? 'gore' : 'splash');
+  if(fish.rarity==='mythical') {
+    spawnParticles(W/2,H/2,60,'#f4d57e','splash');
+    G.screenShake=20;
+    showEventBanner(`🏆 MYTHICAL CAUGHT: ${fish.name}!`);
+  }
+ 
+  G.bobber = null; G.fishOnLine = null;
+  setTimeout(()=>{ G.state='idle'; }, 500);
+ 
+  updateHUD();
+  maybeAutoSave();
+}
+ 
+function unlockLayer(n) {
+  G.player.layer = Math.max(G.player.layer, n);
+  floatText(W/2, H/2, `🌊 LAYER ${n} UNLOCKED`, '#e040fb', 18);
+  showEventBanner(`🌊 Abyssal Layer ${n} Unlocked — Deeper Terrors Await`);
+}
+ 
+function showCatchPopup(fish, weight, xp) {
+  document.getElementById('catch-emoji').textContent = fish.emoji;
+  document.getElementById('catch-name').textContent = fish.name;
+  const rarityColors = {common:'#8a9ba8',uncommon:'#4CAF50',rare:'#2196F3',epic:'#9c27b0',eldritch:'#e040fb',mythical:'#f4d57e',legendary:'#c9953a'};
+  const rc = rarityColors[fish.rarity]||'#fff';
+  document.getElementById('catch-rarity-text').textContent = fish.rarity.toUpperCase();
+  document.getElementById('catch-rarity-text').style.color = rc;
+  document.getElementById('catch-stats').innerHTML = `${weight}lbs · +${fish.value}💰 · +${xp}XP<br><em style="font-size:9px;color:#5a8090;">${fish.desc}</em>`;
+  const popup = document.getElementById('catch-popup');
+  popup.style.borderColor = rc;
+  popup.style.boxShadow = `0 0 60px ${rc}44`;
+  popup.classList.add('show');
+  setTimeout(()=>popup.classList.remove('show'), 2500);
+}
+ 
+// ─── QUEST ENGINE ─────────────────────────────────────────
+function getQuestState(id) { return G.quests.find(q=>q.id===id); }
+ 
+function updateQuestProgress(type, param, amount) {
+  G.quests.forEach(qs => {
+    if(!qs.active || qs.done) return;
+    const def = QUEST_DEFS.find(d=>d.id===qs.id);
+    if(!def) return;
+    const step = def.steps[qs.stepIndex];
+    if(!step) return;
+ 
+    let matched = false;
+    if(type==='catch' && step.type==='catch' && step.fishId===param) matched=true;
+    if(type==='catch_rarity' && step.type==='catch_rarity' && step.rarity===param) matched=true;
+    if(type==='catch_eldritch' && step.type==='catch_eldritch') matched=true;
+    if(type==='catch_mythical' && step.type==='catch_mythical' && step.fishId===param) matched=true;
+    if(type==='boss_reel' && step.type==='boss_reel') matched=true;
+    if(type==='total_catches' && step.type==='total_catches') matched=true;
+    if(type==='sanity_lost' && step.type==='sanity_lost') matched=true;
+    if(type==='reach_layer' && step.type==='reach_layer' && G.player.layer>=step.amount) { qs.progress[qs.stepIndex]=step.amount; matched=false; }
+    if(type==='zero_sanity' && step.type==='zero_sanity') matched=true;
+    if(type==='lore_read' && step.type==='lore_read') matched=true;
+    if(type==='buy_bait' && step.type==='buy_bait' && step.baitId===param) { qs.progress[qs.stepIndex]=1; matched=false; }
+    if(type==='quest_done' && step.type==='quest_done' && step.questId===param) { qs.progress[qs.stepIndex]=1; matched=false; }
+    if(type==='all_quests_done' && step.type==='all_quests_done') {
+      const major=['deep_one_chain','cthulhu_prep','shoggoth_hunt','yithian_quest','deep_dive_quest','colour_quest','poseidon_quest'];
+      const done = major.filter(id=>getQuestState(id)?.done).length;
+      qs.progress[qs.stepIndex]=done;
+      matched=false;
+    }
+    if(type==='catch_all_epic' && step.type==='catch_all_epic') {
+      const epics=FISH.filter(f=>f.rarity==='epic');
+      const caught=epics.filter(f=>G.player.discoveredFish.has(f.id)).length;
+      if(caught>=epics.length) {qs.progress[qs.stepIndex]=1; matched=false;}
+    }
+ 
+    if(matched) {
+      qs.progress[qs.stepIndex] = Math.min(step.amount, (qs.progress[qs.stepIndex]||0) + amount);
+    }
+ 
+    // Advance step?
+    if((qs.progress[qs.stepIndex]||0) >= step.amount) {
+      if(qs.stepIndex < def.steps.length-1) {
+        qs.stepIndex++;
+        floatText(W/2, H/3-20, `📜 Quest step complete!`, '#7fc9ff', 13);
+        showEventBanner(`📜 "${def.name}" — Step ${qs.stepIndex}/${def.steps.length}`);
+        // Queue mythical if last step
+        if(qs.stepIndex === def.steps.length-1) {
+          const lastStep=def.steps[qs.stepIndex];
+          if(lastStep.type==='catch_mythical') {
+            G.questMythicalReady = lastStep.fishId;
+            floatText(W/2,H/3-40,'✨ Mythical fish nearby!','#f4d57e',14);
+            showEventBanner(`✨ ${FISH.find(f=>f.id===lastStep.fishId)?.name} has been summoned!`);
+          }
+        }
+      } else {
+        // Quest complete!
+        qs.done = true;
+        qs.active = def.repeatable || false; // dailies stay active
+        const reward = def.rewards[0];
+        G.player.coins += reward.coins||0;
+        G.player.xp += reward.xp||0;
+        if(reward.bait) addBait(reward.bait.id, reward.bait.amount);
+        if(reward.artifact) G.player.artifacts.push(reward.artifact);
+        updateQuestProgress('quest_done', def.id, 1);
+        floatText(W/2,H/3,'✅ QUEST COMPLETE!','#f4d57e',18);
+        showEventBanner(`✅ Quest Complete: ${def.name} — +${reward.coins}💰`);
+        G.screenShake=15;
+      }
+    }
+  });
+}
+ 
+function addBait(id, amount) {
+  const b = G.player.bait.find(b=>b.id===id);
+  if(b) b.amount+=amount;
+  else G.player.bait.push({id,amount});
+}
+ 
+function getBaitAmount(id) {
+  return G.player.bait.find(b=>b.id===id)?.amount||0;
+}
+ 
+function showEventBanner(text) {
+  G.eventBanner=text; G.eventBannerTimer=200;
+  const el=document.getElementById('event-banner');
+  el.textContent=text; el.classList.add('show');
+}
+ 
+// ─── CASTING ─────────────────────────────────────────────
+let castCharging=false, castPow=0, castPowDir=1;
+ 
+function startCast() {
+  if(G.state!=='idle') return;
+  G.state='casting';
+  castCharging=true; castPow=0; castPowDir=1;
+  document.getElementById('cast-meter').classList.add('active');
+}
+ 
+function releaseCast(tx=W/2,ty=H*0.4) {
+  if(G.state!=='casting') return;
+  castCharging=false;
+  document.getElementById('cast-meter').classList.remove('active');
+  G.state='waiting';
+  G.castTarget={x:tx,y:ty};
+  G.bobber={x:tx,y:ty,wobble:0};
+  G.biteTimer = 60+Math.random()*180;
+  floatText(tx,ty-20,'🎣','#c9953a',16);
+}
+ 
+// ─── HUD ─────────────────────────────────────────────────
+function updateHUD() {
+  document.getElementById('hud-coins').textContent = G.player.coins;
+  document.getElementById('hud-caught').textContent = G.player.catches;
+  document.getElementById('hud-level').textContent = G.player.level;
+  document.getElementById('hud-xp').textContent = G.player.xp;
+  document.getElementById('hud-xpmax').textContent = G.player.xpThreshold;
+  document.getElementById('xpFill').style.width = (G.player.xp/G.player.xpThreshold*100)+'%';
+  document.getElementById('hud-sanity').textContent = Math.floor(G.player.sanity);
+  document.getElementById('sanityFill').style.width = (G.player.sanity/G.player.maxSanity*100)+'%';
+  document.getElementById('sanityFill').style.background =
+    G.player.sanity>60 ? 'linear-gradient(90deg,#6b21a8,#c9953a)' :
+    G.player.sanity>30 ? 'linear-gradient(90deg,#7c1d1d,#6b21a8)' :
+    'linear-gradient(90deg,#c0392b,#7c1d1d)';
+  const hour=Math.floor(G.time*24);
+  const timeName = hour<5?'Night':hour<12?'Dawn':hour<17?'Day':hour<21?'Dusk':'Night';
+  document.getElementById('hud-time').textContent=timeName;
+  document.getElementById('hud-weather').textContent=G.weather;
+  document.getElementById('hud-event').textContent=`Layer ${G.player.layer} · ${G.weather} · ${timeName}`;
+  document.getElementById('layer-num').textContent=G.player.layer;
+  // Event banner fade
+  if(G.eventBannerTimer>0){
+    G.eventBannerTimer--;
+    if(G.eventBannerTimer<=0) document.getElementById('event-banner').classList.remove('show');
+  }
+}
+ 
+// ─── DRAW ─────────────────────────────────────────────────
+function getLayerPalette() {
+  const palettes=[
+    {sky:'#04080f',water:'#071624',deep:'#040c1a',foam:'rgba(100,150,200,0.15)'},
+    {sky:'#030712',water:'#060f1e',deep:'#030810',foam:'rgba(80,100,180,0.12)'},
+    {sky:'#020509',water:'#040d18',deep:'#020609',foam:'rgba(60,80,160,0.1)'},
+    {sky:'#010305',water:'#030810',deep:'#010205',foam:'rgba(40,60,140,0.08)'},
+    {sky:'#000103',water:'#020508',deep:'#000102',foam:'rgba(20,40,120,0.06)'},
+  ];
+  return palettes[Math.min(G.player.layer-1,4)];
+}
+ 
+function drawOcean(pal) {
+  const t=G.waveTime;
+  // Sky gradient
+  const skyGrad=ctx.createLinearGradient(0,0,0,H*0.35);
+  skyGrad.addColorStop(0,G.weather==='aurora'?'#0d1a2a':pal.sky);
+  skyGrad.addColorStop(1,pal.water);
+  ctx.fillStyle=skyGrad; ctx.fillRect(0,0,W,H*0.35);
+ 
+  // Aurora
+  if(G.weather==='aurora') {
+    for(let i=0;i<5;i++){
+      const g=ctx.createLinearGradient(0,0,W,0);
+      g.addColorStop(0,'transparent');
+      g.addColorStop(0.3+i*0.1,`hsla(${160+i*25},80%,40%,${0.06+Math.sin(t*0.01+i)*0.03})`);
+      g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.fillRect(0,H*(0.05+i*0.04),W,H*0.06);
+    }
+  }
+ 
+  // Ocean body
+  const oceGrad=ctx.createLinearGradient(0,H*0.3,0,H);
+  oceGrad.addColorStop(0,pal.water);
+  oceGrad.addColorStop(0.4,pal.deep);
+  oceGrad.addColorStop(1,'#000');
+  ctx.fillStyle=oceGrad; ctx.fillRect(0,H*0.3,W,H*0.7);
+ 
+  // Animated waves
+  for(let wave=0;wave<3;wave++){
+    ctx.beginPath();
+    ctx.moveTo(0,H*(0.3+wave*0.04));
+    for(let x=0;x<=W;x+=8){
+      const y=H*(0.3+wave*0.04)+Math.sin(x*0.015+t*0.8+wave*1.5)*3+Math.sin(x*0.008+t*0.5+wave)*4;
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(W,H); ctx.lineTo(0,H);
+    ctx.fillStyle=pal.foam;
+    ctx.fill();
+  }
+ 
+  // Depth fog
+  if(G.player.layer>=3){
+    const fog=ctx.createLinearGradient(0,H*0.5,0,H);
+    fog.addColorStop(0,'transparent');
+    fog.addColorStop(1,`rgba(0,0,0,${0.3+G.player.layer*0.1})`);
+    ctx.fillStyle=fog; ctx.fillRect(0,H*0.5,W,H*0.5);
+  }
+ 
+  // Storm effect
+  if(G.weather==='storm'&&Math.random()<0.03){
+    ctx.strokeStyle='rgba(200,200,255,0.5)';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    const lx=Math.random()*W;
+    ctx.moveTo(lx,0); ctx.lineTo(lx+20,H*0.4);
+    ctx.stroke();
+  }
+ 
+  // Fog overlay
+  if(G.weather==='fog'){
+    const fogRad=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.8);
+    fogRad.addColorStop(0,'transparent');
+    fogRad.addColorStop(1,'rgba(40,60,80,0.35)');
+    ctx.fillStyle=fogRad; ctx.fillRect(0,0,W,H);
+  }
+}
+ 
+function drawBoids(pal) {
+  for(const b of G.boids){
+    ctx.save();
+    ctx.translate(b.x,b.y);
+    ctx.rotate(b.angle);
+    // Fish body wobble
+    const w=Math.sin(b.wobble)*0.2;
+    ctx.scale(1+w,1-w*0.5);
+    // Glow for eldritch layer
+    if(G.player.layer>=3&&Math.random()<0.01){
+      ctx.shadowColor='#e040fb';
+      ctx.shadowBlur=12;
+    }
+    ctx.fillStyle=`rgba(100,160,200,0.4)`;
+    ctx.beginPath();
+    ctx.ellipse(0,0,b.size,b.size*0.4,0,0,Math.PI*2);
+    ctx.fill();
+    // Tail
+    ctx.beginPath();
+    ctx.moveTo(-b.size,0);
+    ctx.lineTo(-b.size*1.4,-b.size*0.4+Math.sin(b.wobble)*2);
+    ctx.lineTo(-b.size*1.4,b.size*0.4+Math.sin(b.wobble+1)*2);
+    ctx.fillStyle=`rgba(80,140,180,0.3)`;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+ 
+function drawPlayer() {
+  const t=G.waveTime;
+  const px=W/2, py=H*0.3-8;
+  const bob=Math.sin(t*1.2)*3;
+  // Boat hull
+  ctx.save();
+  ctx.translate(px,py+bob);
+  // Glow for eldritch
+  if(G.glitch){ctx.shadowColor='#e040fb';ctx.shadowBlur=20;}
+  // Hull
+  ctx.fillStyle='#2c1a0e';
+  ctx.beginPath();
+  ctx.ellipse(0,8,36,10,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle='#3d2612';
+  ctx.beginPath();
+  ctx.ellipse(0,5,32,8,0,0,Math.PI*2);
+  ctx.fill();
+  // Mast
+  ctx.strokeStyle='#4a3020';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(0,5);ctx.lineTo(0,-28);ctx.stroke();
+  // Sail
+  ctx.fillStyle='rgba(180,160,140,0.8)';
+  ctx.beginPath();ctx.moveTo(0,-26);ctx.lineTo(16,-10);ctx.lineTo(0,-2);ctx.fill();
+  // Fishing rod
+  ctx.strokeStyle='#6b4c2a';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(-18,-2);ctx.lineTo(-28,-20);ctx.stroke();
+  ctx.restore();
+ 
+  // Line to bobber
+  if(G.bobber){
+    ctx.strokeStyle='rgba(200,200,200,0.5)'; ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(px-26,py-20+Math.sin(t*1.2)*3);
+    ctx.quadraticCurveTo(px+(-26+G.bobber.x-px)*0.5, py-20+(G.bobber.y-(py-20))*0.5-30, G.bobber.x,G.bobber.y);
+    ctx.stroke();
+    // Bobber
+    G.bobber.wobble+=0.15;
+    const bby=G.bobber.y+Math.sin(G.bobber.wobble)*4;
+    ctx.fillStyle='#e74c3c';
+    ctx.beginPath();ctx.arc(G.bobber.x,bby,7,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.3)';
+    ctx.beginPath();ctx.arc(G.bobber.x-2,bby-2,2,0,Math.PI*2);ctx.fill();
+    // Bite warning
+    if(G.state==='waiting'&&G.biteTimer<30){
+      ctx.fillStyle='#e74c3c';
+      ctx.font='bold 14px serif';
+      ctx.textAlign='center';
+      ctx.fillText('❗',G.bobber.x,bby-16);
+    }
+  }
+}
+ 
+function drawParticles() {
+  for(const p of G.particles){
+    ctx.globalAlpha=p.life;
+    if(p.type==='gore'){
+      ctx.fillStyle=p.color;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
+    } else {
+      ctx.fillStyle=p.color;
+      ctx.fillRect(p.x,p.y,p.size,p.size);
+    }
+  }
+  ctx.globalAlpha=1;
+}
+ 
+function drawFloats() {
+  ctx.textAlign='center';
+  for(const f of G.floats){
+    ctx.globalAlpha=f.life;
+    ctx.fillStyle=f.color;
+    ctx.font=`bold ${f.size}px 'IM Fell English',serif`;
+    ctx.fillText(f.text,f.x,f.y);
+  }
+  ctx.globalAlpha=1;
+}
+ 
+function drawSanityVfx() {
+  const s=G.player.sanity;
+  if(s<80){
+    const intensity=(80-s)/80;
+    // Vignette
+    const v=ctx.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.8);
+    v.addColorStop(0,'transparent');
+    v.addColorStop(1,`rgba(120,0,40,${intensity*0.6})`);
+    ctx.fillStyle=v; ctx.fillRect(0,0,W,H);
+  }
+  if(s<40&&Math.random()<0.05){
+    // Hallucination flash
+    ctx.fillStyle=`rgba(107,33,168,${Math.random()*0.08})`;
+    ctx.fillRect(0,0,W,H);
+  }
+  if(G.glitch&&!document.querySelector('.settings')?.reduceMotion){
+    const gi=Math.random()*4-2;
+    ctx.fillStyle='rgba(0,0,0,0.01)';
+    for(let i=0;i<3;i++){
+      const gy=Math.random()*H,gh=Math.random()*20;
+      const id=ctx.getImageData(0,gy,W,gh);
+      ctx.putImageData(id,gi,gy);
+    }
+  }
+}
+ 
+// ─── GAME LOOP ───────────────────────────────────────────
+function update() {
+  G.frameCount++;
+  G.waveTime+=0.02;
+  G.time+=0.0003;
+  if(G.time>1)G.time=0;
+ 
+  tickWeather();
+  updateBoids();
+ 
+  // Cast power charge
+  if(castCharging && G.state==='casting'){
+    castPow+=castPowDir*1.5;
+    if(castPow>=100){castPow=100;castPowDir=-1;}
+    if(castPow<=0){castPow=0;castPowDir=1;}
+    document.getElementById('cast-meter-fill').style.height=castPow+'%';
+  }
+ 
+  // Waiting for bite
+  if(G.state==='waiting'){
+    G.biteTimer--;
+    if(G.biteTimer<=0){
+      G.state='reeling';
+      G.fishOnLine=selectFish();
+      startReel(G.fishOnLine);
+    }
+  }
+ 
+  if(G.state==='reeling') tickReel();
+ 
+  // Passive sanity drain
+  if(G.frameCount%300===0) drainSanity(0.5);
+ 
+  // Particles
+  G.particles=G.particles.filter(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    p.vx*=0.95; p.vy+=0.08;
+    p.life-=0.018;
+    return p.life>0;
+  });
+  G.floats=G.floats.filter(f=>{
+    f.y+=f.vy; f.life-=0.012; return f.life>0;
+  });
+ 
+  if(G.screenShake>0){G.screenShake*=0.88;}
+ 
+  updateHUD();
+}
+ 
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  const pal=getLayerPalette();
+  const sx=G.screenShake?(Math.random()-0.5)*G.screenShake:0;
+  const sy=G.screenShake?(Math.random()-0.5)*G.screenShake:0;
+  ctx.save();
+  ctx.translate(sx,sy);
+  drawOcean(pal);
+  drawBoids(pal);
+  drawPlayer();
+  drawParticles();
+  drawFloats();
+  drawSanityVfx();
+  ctx.restore();
+}
+ 
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+ 
+// ─── UI ACTIONS ──────────────────────────────────────────
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+window.closeModal=closeModal;
+ 
+function openModal(id){
+  document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'));
+  document.getElementById(id).classList.add('open');
+}
+ 
+function sellAll() {
+  let total=0;
+  for(const item of G.player.inventory) {
+    const f=FISH.find(f=>f.id===item.fish);
+    if(f) total+=item.value;
+  }
+  G.player.inventory=[]; G.player.coins+=total;
+  floatText(W/2,H/3,`+${total}💰`,'#f4d57e',16);
+  updateHUD(); renderInv(); maybeAutoSave();
+}
+window.sellAll=sellAll;
+ 
+function sellRares() {
+  const rare=['rare','epic','eldritch','mythical','legendary'];
+  let total=0,keep=[];
+  for(const item of G.player.inventory){
+    const f=FISH.find(f=>f.id===item.fish);
+    if(f&&rare.includes(f.rarity)){total+=item.value;}
+    else keep.push(item);
+  }
+  G.player.inventory=keep; G.player.coins+=total;
+  floatText(W/2,H/3,`+${total}💰`,'#f4d57e',16);
+  updateHUD(); renderInv(); maybeAutoSave();
+}
+window.sellRares=sellRares;
+ 
+function renderQuests() {
+  const seer=['The lines between worlds thin with each catch...',
+    '"It watches you fish. It has watched since before fish existed."',
+    '"Do not read the writing on the scales. Do not."',
+    '"The Mythical waits at the end of the chain, not the end of luck."',
+    '"Cast deep. The surface lies."'];
+  document.getElementById('quest-npc-msg').textContent=seer[Math.floor(Math.random()*seer.length)];
+ 
+  let activeHtml='',availHtml='',doneHtml='';
+  G.quests.forEach(qs=>{
+    const def=QUEST_DEFS.find(d=>d.id===qs.id);
+    if(!def) return;
+    const step=qs.active&&!qs.done?def.steps[qs.stepIndex]:null;
+    const progress=qs.progress[qs.stepIndex]||0;
+ 
+    const card=`<div class="quest-item ${qs.done?'complete':qs.active?'active':''}">
+      <div class="quest-title">${qs.done?'✅':qs.active?'⏳':'📋'} ${def.name}</div>
+      <div class="quest-desc">${def.desc}</div>
+      ${step?`<div style="font-size:10px;color:var(--silver);margin-top:4px;">${qs.stepIndex+1}/${def.steps.length}: ${step.desc}</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,progress/step.amount*100)}%"></div></div>
+      <div style="font-size:9px;color:var(--textdim);">${progress}/${step.amount}</div>`:''}
+      ${!qs.active&&!qs.done&&(!def.layer||G.player.layer>=def.layer)?
+        `<button class="btn" onclick="acceptQuest('${def.id}')" style="margin-top:6px;font-size:9px;">Accept Quest</button>`
+        :(def.layer&&G.player.layer<def.layer?`<span style="font-size:9px;color:#e74c3c;">Requires Layer ${def.layer}</span>`:'')
+      }
+    </div>`;
+ 
+    if(qs.done) doneHtml+=card;
+    else if(qs.active) activeHtml+=card;
+    else availHtml+=card;
+  });
+  document.getElementById('quest-active-list').innerHTML=activeHtml||'<p style="font-size:10px;color:var(--textdim);">No active quests.</p>';
+  document.getElementById('quest-available-list').innerHTML=availHtml||'<p style="font-size:10px;color:var(--textdim);">None available at your layer.</p>';
+  document.getElementById('quest-done-list').innerHTML=doneHtml||'';
+}
+ 
+function acceptQuest(id) {
+  const qs=G.quests.find(q=>q.id===id);
+  const def=QUEST_DEFS.find(d=>d.id===id);
+  if(!qs||!def) return;
+  if(qs.active||qs.done) return;
+  if(def.layer&&G.player.layer<def.layer) return;
+  qs.active=true; qs.stepIndex=0; qs.progress=def.steps.map(()=>0);
+  floatText(W/2,H/3,'📜 Quest Accepted!','#7fc9ff',14);
+  renderQuests();
+}
+window.acceptQuest=acceptQuest;
+ 
+function renderEnc() {
+  const term=(document.getElementById('enc-search')?.value||'').toLowerCase();
+  document.getElementById('enc-count').textContent=`${G.player.discoveredFish.size}/${FISH.length}`;
+  const rarityClass={common:'rarity-common',uncommon:'rarity-uncommon',rare:'rarity-rare',epic:'rarity-epic',eldritch:'rarity-eldritch',mythical:'rarity-mythical',legendary:'rarity-legendary'};
+  const html=FISH.filter(f=>!term||f.name.toLowerCase().includes(term)||f.rarity.includes(term)).map(f=>{
+    const known=G.player.discoveredFish.has(f.id);
+    return `<div class="fish-card ${known?'':'undiscovered'}">
+      <span style="font-size:18px;">${known?f.emoji:'❓'}</span>
+      <div style="flex:1;">
+        <div style="font-size:11px;font-weight:bold;">${known?f.name:'???'} <span class="${rarityClass[f.rarity]||''}">[${f.rarity}]</span></div>
+        <div style="font-size:9px;color:var(--textdim);">${known?f.desc:''}</div>
+        ${known?`<div style="font-size:9px;color:var(--gold);">L${f.layer} · ${f.weight[0]}–${f.weight[1]}lbs · 💰${f.value}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('enc-list').innerHTML=html;
+}
+ 
+function renderShop() {
+  const seer=["\"The altar hungers.\"","\"These baits cost me dearly. Worth it.\"","\"Trade well.\"","\"The deep demands a tithe.\""];
+  document.getElementById('shop-seer-msg').textContent=seer[Math.floor(Math.random()*seer.length)];
+  document.getElementById('shop-bait-list').innerHTML=BAIT_SHOP.map(b=>`
+    <div class="fish-card" style="margin:3px 0;">
+      <span style="font-size:16px;">${b.emoji}</span>
+      <div style="flex:1;">
+        <div style="font-size:11px;">${b.name} <span style="color:var(--textdim);font-size:9px;">${b.desc}</span></div>
+        <div style="font-size:9px;color:var(--textdim);">Have: ${getBaitAmount(b.id)} · 💰${b.cost}</div>
+      </div>
+      <button class="btn" onclick="buyBait('${b.id}')" style="font-size:9px;padding:4px 8px;">${G.player.coins>=b.cost?'Buy':'💀'}</button>
+    </div>`).join('');
+ 
+  document.getElementById('shop-artifact-list').innerHTML=G.player.artifacts.length?
+    G.player.artifacts.map(a=>`<div class="fish-card"><span>🔮</span><div>${a}</div></div>`).join(''):
+    '<p style="font-size:10px;color:var(--textdim);">No artifacts yet. Complete quest chains.</p>';
+}
+ 
+function buyBait(id) {
+  const b=BAIT_SHOP.find(b=>b.id===id);
+  if(!b||G.player.coins<b.cost) return;
+  G.player.coins-=b.cost;
+  addBait(id,1);
+  floatText(W/2,H/3,`+${b.emoji} ${b.name}`,'#c9953a',13);
+  updateQuestProgress('buy_bait',id,1);
+  updateHUD(); renderShop(); maybeAutoSave();
+}
+window.buyBait=buyBait;
+ 
+function renderInv() {
+  document.getElementById('inv-coins').textContent=G.player.coins;
+  const baitStr=G.player.bait.map(b=>{
+    const def=BAIT_SHOP.find(bd=>bd.id===b.id);
+    return `${def?.emoji||'🪱'}${b.amount}`;
+  }).join(' ');
+  document.getElementById('inv-bait').textContent=baitStr||'None';
+  const rarityClass={common:'rarity-common',uncommon:'rarity-uncommon',rare:'rarity-rare',epic:'rarity-epic',eldritch:'rarity-eldritch',mythical:'rarity-mythical',legendary:'rarity-legendary'};
+  if(!G.player.inventory.length){document.getElementById('inv-fish-list').innerHTML='<p style="font-size:10px;color:var(--textdim);">Empty. Go fish.</p>';return;}
+  document.getElementById('inv-fish-list').innerHTML=G.player.inventory.slice(-50).reverse().map(item=>{
+    const f=FISH.find(f=>f.id===item.fish);
+    if(!f) return '';
+    return `<div class="fish-card">
+      <span>${f.emoji}</span>
+      <div style="flex:1;"><span style="font-size:11px;">${f.name}</span> <span class="${rarityClass[f.rarity]||''}" style="font-size:9px;">[${f.rarity}]</span>
+      <div style="font-size:9px;color:var(--textdim);">${item.weight}lbs · 💰${item.value}</div></div>
+    </div>`;
+  }).join('');
+}
+ 
+function renderUpgrades() {
+  document.getElementById('upgrade-list').innerHTML=ROD_UPGRADES.map(u=>{
+    const lv=getUpgradeLevel(u.id);
+    const cost=upgradeCost(u.id);
+    const maxed=lv>=u.maxLevel;
+    return `<div class="fish-card" style="margin:4px 0;flex-direction:column;align-items:flex-start;gap:4px;">
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+        <div style="font-size:11px;font-weight:bold;color:var(--goldhi);">${u.name} (${lv}/${u.maxLevel})</div>
+        <button class="btn" ${maxed||G.player.coins<cost?'disabled style="opacity:0.4;"':''} onclick="buyUpgrade('${u.id}')" style="font-size:9px;padding:4px 8px;">${maxed?'MAX':'💰 '+cost}</button>
+      </div>
+      <div style="font-size:10px;color:var(--textdim);">${u.desc}</div>
+      <div class="progress-bar" style="width:100%;"><div class="progress-fill" style="width:${lv/u.maxLevel*100}%;"></div></div>
+    </div>`;
+  }).join('');
+}
+ 
+function buyUpgrade(id) {
+  const def=ROD_UPGRADES.find(r=>r.id===id);
+  if(!def) return;
+  const lv=getUpgradeLevel(id);
+  if(lv>=def.maxLevel) return;
+  const cost=upgradeCost(id);
+  if(G.player.coins<cost) { floatText(W/2,H/3,'Need more coins!','#e74c3c',13); return; }
+  G.player.coins-=cost;
+  G.player.upgrades[id]=(G.player.upgrades[id]||0)+1;
+  floatText(W/2,H/3,`⬆️ ${def.name} Lv${G.player.upgrades[id]}`,'#f4d57e',14);
+  updateHUD(); renderUpgrades(); maybeAutoSave();
+}
+window.buyUpgrade=buyUpgrade;
+ 
+// ─── BAIT SELECTION ──────────────────────────────────────
+function cycleBait() {
+  const available=G.player.bait.filter(b=>b.amount>0);
+  if(!available.length) return;
+  const idx=available.findIndex(b=>b.id===G.player.activeBait);
+  G.player.activeBait=available[(idx+1)%available.length].id;
+  const def=BAIT_SHOP.find(b=>b.id===G.player.activeBait);
+  floatText(W/2,H*0.6,`Bait: ${def?.emoji||'🪱'} ${def?.name||G.player.activeBait}`,'#c9953a',12);
+  // Consume 1 bait
+  const b=G.player.bait.find(b=>b.id===G.player.activeBait);
+  if(b&&b.amount>0) b.amount--;
+}
+ 
+// ─── INPUT ───────────────────────────────────────────────
+let touchStartX=0,touchStartY=0,touchStartTime=0;
+let castTapStart=null;
+ 
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.changedTouches[0];
+  touchStartX=t.clientX; touchStartY=t.clientY; touchStartTime=Date.now();
+  if(G.state==='idle'){
+    castTapStart={x:t.clientX,y:t.clientY,time:Date.now()};
+    startCast();
+  } else if(G.state==='reeling') {
+    reelHook();
+  }
+},{passive:false});
+ 
+canvas.addEventListener('touchend',e=>{
+  e.preventDefault();
+  if(G.state==='casting'){
+    const t=e.changedTouches[0];
+    // Cast toward touch point — aim for that x, ocean level
+    const tx=t.clientX;
+    const ty=H*0.35+Math.random()*H*0.2;
+    releaseCast(tx,ty);
+  }
+},{passive:false});
+ 
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.code==='Enter'){
+    e.preventDefault();
+    if(G.state==='idle') startCast();
+    else if(G.state==='casting') releaseCast(W/2+Math.random()*100-50, H*0.4+Math.random()*H*0.15);
+    else if(G.state==='reeling') reelHook();
+  }
+  if(e.code==='KeyB') cycleBait();
+  if(e.code==='KeyS' && e.ctrlKey){ e.preventDefault(); saveGame(); floatText(W/2,H/3,'💾 Saved!','#c9953a',14); }
+  if(e.code==='Escape') document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'));
+  if(e.code==='KeyQ'){ renderQuests(); openModal('modal-quests'); }
+  if(e.code==='KeyE'){ renderEnc(); openModal('modal-enc'); }
+  if(e.code==='KeyI'){ renderInv(); openModal('modal-inv'); }
+});
+ 
+// Cast meter zone positioning
+(function setCastZone(){
+  const el=document.getElementById('cast-meter-zone');
+  el.style.bottom='30%'; el.style.height='25%';
+})();
+ 
+// Button wiring
+document.getElementById('btn-quests').addEventListener('click',()=>{ renderQuests(); openModal('modal-quests'); });
+document.getElementById('btn-enc').addEventListener('click',()=>{ renderEnc(); openModal('modal-enc'); G.player.loreRead++; updateQuestProgress('lore_read',null,1); });
+document.getElementById('btn-shop').addEventListener('click',()=>{ renderShop(); openModal('modal-shop'); });
+document.getElementById('btn-inv').addEventListener('click',()=>{ renderInv(); openModal('modal-inv'); });
+document.getElementById('btn-upgrade').addEventListener('click',()=>{ renderUpgrades(); openModal('modal-upgrade'); });
+document.getElementById('btn-dive').addEventListener('click',()=>{
+  // Dive deeper
+  if(G.player.layer<5){
+    showEventBanner(`🌊 Descended to Layer ${G.player.layer+1}... if you dare.`);
+  } else {
+    showEventBanner("You are already in the deepest abyss. There is nowhere left to fall.");
+  }
+});
+ 
+document.getElementById('enc-search').addEventListener('input', renderEnc);
+ 
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+ 
+// ─── AUTO SAVE ───────────────────────────────────────────
+function maybeAutoSave() {
+  if(G.frameCount-G.lastAutoSave > 1800) {
+    saveGame(); G.lastAutoSave=G.frameCount;
+  }
+}
+ 
+// ─── INIT ─────────────────────────────────────────────────
+initBoids(32);
+loadGame();
+updateHUD();
+ 
+// Accept tutorial quest by default
+(()=>{
+  const tut=G.quests.find(q=>q.id==='tutorial_chain');
+  if(tut&&!tut.active&&!tut.done){ tut.active=true; tut.stepIndex=0; tut.progress=[0,0,0]; }
+  const daily=G.quests.find(q=>q.id==='daily_void');
+  if(daily&&!daily.active){ daily.active=true; daily.stepIndex=0; daily.progress=[0]; }
+  const daily2=G.quests.find(q=>q.id==='daily_commons');
+  if(daily2&&!daily2.active){ daily2.active=true; daily2.stepIndex=0; daily2.progress=[0]; }
+})();
+ 
+// Opening banner
+setTimeout(()=>{
+  showEventBanner('🎣 Cast your line · SPACE/TAP to cast · Tap/SPACE to reel');
+},500);
+ 
+// Start!
+loop();
+</script>
+</body>
+</html>
